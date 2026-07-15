@@ -34,6 +34,7 @@ export class LocalDiskStorageService
     'products',
     'categories',
     'offers',
+    'campaigns',
     'users',
   ];
 

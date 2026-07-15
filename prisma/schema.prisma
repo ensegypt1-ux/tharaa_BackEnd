@@ -80,6 +80,15 @@ enum ReviewReportStatus {
   DISMISSED
 }
 
+enum CampaignDestinationType {
+  OFFER
+  CATEGORY
+  PRODUCT
+  COUPON
+  CART
+  NONE
+}
+
 enum NotificationType {
   ORDER_STATUS
   OFFER
@@ -363,6 +372,29 @@ model CouponUsage {
   order  Order  @relation(fields: [orderId], references: [id])
 
   @@index([couponId, userId])
+}
+
+model Campaign {
+  id               String                   @id @default(uuid())
+  titleAr          String
+  titleEn          String
+  subtitleAr       String?
+  subtitleEn       String?
+  imagePath        String?
+  isActive         Boolean                  @default(true)
+  startsAt         DateTime
+  endsAt           DateTime
+  sortOrder        Int                      @default(0)
+  destinationType  CampaignDestinationType  @default(NONE)
+  destinationId    String?
+  buttonLabelAr    String?
+  buttonLabelEn    String?
+  deletedAt        DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([isActive, startsAt, endsAt, sortOrder])
+  @@index([sortOrder])
 }
 
 model Cart {

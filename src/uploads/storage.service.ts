@@ -1,6 +1,11 @@
 export const STORAGE_SERVICE = 'STORAGE_SERVICE';
 
-export type StorageFolder = 'products' | 'categories' | 'offers' | 'users';
+export type StorageFolder =
+  | 'products'
+  | 'categories'
+  | 'offers'
+  | 'campaigns'
+  | 'users';
 
 export interface StorageSaveResult {
   path: string;

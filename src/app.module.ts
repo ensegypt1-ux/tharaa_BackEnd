@@ -22,6 +22,7 @@ import { DeliveryModule } from './delivery/delivery.module';
 import { HealthModule } from './health/health.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 import { OffersModule } from './offers/offers.module';
 import { OrdersModule } from './orders/orders.module';
 import { PricingModule } from './pricing/pricing.module';
@@ -63,6 +64,7 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     InventoryModule,
     OffersModule,
+    CampaignsModule,
     CouponsModule,
     DeliveryModule,
     CartModule,
