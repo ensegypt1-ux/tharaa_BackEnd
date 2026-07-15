@@ -59,6 +59,17 @@ export class AdminCampaignsController {
     return this.campaignsService.adminList();
   }
 
+  @Get('analytics')
+  @ApiOperation({ summary: 'Campaign analytics summary (impressions, clicks, CTR)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Analytics retrieved',
+    type: ApiSuccessDto,
+  })
+  analytics() {
+    return this.campaignsService.adminAnalyticsSummary();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Admin get campaign by id' })
   @ApiResponse({
@@ -227,6 +238,75 @@ export class AdminCampaignsController {
       entityType: 'Campaign',
       entityId: id,
       newValues: { imagePath: saved.path },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    return updated;
+  }
+
+  @Delete(':id/icon')
+  @ApiOperation({ summary: 'Remove campaign icon' })
+  @ApiResponse({ status: 200, description: 'Icon removed', type: ApiSuccessDto })
+  @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
+  async removeIcon(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const updated = await this.campaignsService.removeIcon(id);
+    await this.audit.log({
+      userId: user.id,
+      userRole: user.role,
+      userEmail: user.email,
+      action: 'CAMPAIGN_ICON_REMOVE',
+      entityType: 'Campaign',
+      entityId: id,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    return updated;
+  }
+
+  @Post(':id/icon')
+  @ApiOperation({ summary: 'Upload or replace campaign icon' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Icon uploaded', type: ApiSuccessDto })
+  @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
+  @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadIcon(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('File is required');
+    }
+
+    const saved = await this.storage.save(
+      file.buffer,
+      'campaigns',
+      file.mimetype,
+    );
+    const updated = await this.campaignsService.setIcon(id, saved.path);
+    await this.audit.log({
+      userId: user.id,
+      userRole: user.role,
+      userEmail: user.email,
+      action: 'CAMPAIGN_ICON_UPLOAD',
+      entityType: 'Campaign',
+      entityId: id,
+      newValues: { iconPath: saved.path },
       ip: req.ip,
       userAgent: req.headers['user-agent'],
     });

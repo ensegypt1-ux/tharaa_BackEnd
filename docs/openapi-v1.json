@@ -4065,6 +4065,1049 @@
         ]
       }
     },
+    "/api/v1/campaigns": {
+      "get": {
+        "operationId": "CampaignsController_list",
+        "summary": "List currently active public campaigns (optional placement + targeting filters)",
+        "parameters": [
+          {
+            "name": "placement",
+            "required": false,
+            "in": "query",
+            "description": "When set, only campaigns assigned to this placement are returned",
+            "schema": {
+              "enum": [
+                "HOME_HERO",
+                "HOME_SLIDER",
+                "HOME_STRIP",
+                "HOME_CATEGORY_STRIP",
+                "HOME_MIDDLE",
+                "HOME_BOTTOM",
+                "CATEGORY_TOP",
+                "CATEGORY_INLINE",
+                "PRODUCT_TOP",
+                "PRODUCT_AFTER_IMAGES",
+                "PRODUCT_BEFORE_DESCRIPTION",
+                "PRODUCT_BOTTOM",
+                "OFFERS_TOP",
+                "SEARCH_TOP",
+                "CART_TOP",
+                "CART_BOTTOM",
+                "CHECKOUT_TOP",
+                "CHECKOUT_BOTTOM",
+                "ORDER_SUCCESS"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "authenticated",
+            "required": false,
+            "in": "query",
+            "description": "Client auth context. Prefer this over relying on JWT for public routes.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "City name for targeting (e.g. Al Khafji)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "description": "Branch / store id for targeting",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "couponId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cartAmount",
+            "required": false,
+            "in": "query",
+            "description": "Current cart total for amount targeting",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Max campaigns to return after rotation (useful for popups)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaigns listed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
+    "/api/v1/campaigns/placement/{placement}": {
+      "get": {
+        "operationId": "CampaignsController_listByPlacement",
+        "summary": "List active campaigns for a specific placement",
+        "parameters": [
+          {
+            "name": "placement",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "HOME_HERO",
+                "HOME_SLIDER",
+                "HOME_STRIP",
+                "HOME_CATEGORY_STRIP",
+                "HOME_MIDDLE",
+                "HOME_BOTTOM",
+                "CATEGORY_TOP",
+                "CATEGORY_INLINE",
+                "PRODUCT_TOP",
+                "PRODUCT_AFTER_IMAGES",
+                "PRODUCT_BEFORE_DESCRIPTION",
+                "PRODUCT_BOTTOM",
+                "OFFERS_TOP",
+                "SEARCH_TOP",
+                "CART_TOP",
+                "CART_BOTTOM",
+                "CHECKOUT_TOP",
+                "CHECKOUT_BOTTOM",
+                "ORDER_SUCCESS"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "authenticated",
+            "required": false,
+            "in": "query",
+            "description": "Client auth context. Prefer this over relying on JWT for public routes.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "City name for targeting (e.g. Al Khafji)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": false,
+            "in": "query",
+            "description": "Branch / store id for targeting",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "couponId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cartAmount",
+            "required": false,
+            "in": "query",
+            "description": "Current cart total for amount targeting",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Max campaigns to return after rotation (useful for popups)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaigns listed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
+    "/api/v1/campaigns/track": {
+      "post": {
+        "operationId": "CampaignsController_trackBulk",
+        "summary": "Bulk track campaign impressions/clicks",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkTrackCampaignEventsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Events tracked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
+    "/api/v1/campaigns/{id}/track": {
+      "post": {
+        "operationId": "CampaignsController_trackOne",
+        "summary": "Track a single campaign impression or click",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackCampaignEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event tracked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
+    "/api/v1/admin/campaigns": {
+      "get": {
+        "operationId": "AdminCampaignsController_list",
+        "summary": "Admin list campaigns",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Campaigns listed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminCampaignsController_create",
+        "summary": "Create campaign",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCampaignDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Campaign created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/campaigns/analytics": {
+      "get": {
+        "operationId": "AdminCampaignsController_analytics",
+        "summary": "Campaign analytics summary (impressions, clicks, CTR)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Analytics retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/campaigns/{id}": {
+      "get": {
+        "operationId": "AdminCampaignsController_findOne",
+        "summary": "Admin get campaign by id",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminCampaignsController_update",
+        "summary": "Update campaign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCampaignDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Campaign updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "AdminCampaignsController_remove",
+        "summary": "Soft-delete campaign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/campaigns/{id}/image": {
+      "delete": {
+        "operationId": "AdminCampaignsController_removeImage",
+        "summary": "Remove campaign image",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminCampaignsController_uploadImage",
+        "summary": "Upload or replace campaign image",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Image uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/campaigns/{id}/icon": {
+      "delete": {
+        "operationId": "AdminCampaignsController_removeIcon",
+        "summary": "Remove campaign icon",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Icon removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminCampaignsController_uploadIcon",
+        "summary": "Upload or replace campaign icon",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Icon uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-campaigns"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/coupons/validate": {
       "post": {
         "operationId": "CouponsController_validate",
@@ -8515,18 +9558,128 @@
   },
   "info": {
     "title": "Tharaa Market API",
-    "description": "",
+    "description": "Official **Version 1** REST API contract for Tharaa Market (Al Khafji).\n\n### Stability\nThis API is **frozen**. Breaking changes to URLs, request/response bodies, enums, pagination, auth, uploads, or error envelopes are not allowed in v1.\nFuture incompatible changes must ship as `/api/v2`.\n\n### Response envelope\nSuccess: `{ success: true, data, meta? }`\nError: `{ success: false, statusCode, message, errorCode?, details?, timestamp, path }`\n\n### Authentication\nUse `Authorization: Bearer <accessToken>`. Obtain tokens via `/auth/login`, `/auth/register`, `/auth/google`, or `/auth/refresh`.\nRefresh tokens rotate on every use.\n\n### Uploads\nMultipart form field name: `file`. Allowed MIME: jpeg, png, webp. Served under `/static/`.\n\n### Admin realtime (Socket.IO)\nNamespace `/admin` for staff dashboards. Authenticate with the JWT access token (`auth.token` or `Authorization: Bearer`).\nEvents: `admin:order_created`, `admin:order_updated`. Roles: ADMIN, MANAGER, EMPLOYEE.\nFull contract: `docs/ADMIN_INTEGRATION.md` (Realtime section). REST remains the source of truth.",
     "version": "1.0.0",
     "contact": {}
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "bootstrap",
+      "description": "App startup configuration"
+    },
+    {
+      "name": "auth",
+      "description": "Authentication and token management"
+    },
+    {
+      "name": "users",
+      "description": "Customer profile and device tokens"
+    },
+    {
+      "name": "addresses",
+      "description": "Customer delivery addresses"
+    },
+    {
+      "name": "categories",
+      "description": "Public catalog categories"
+    },
+    {
+      "name": "products",
+      "description": "Public catalog products and reviews"
+    },
+    {
+      "name": "cart",
+      "description": "Authenticated shopping cart"
+    },
+    {
+      "name": "coupons",
+      "description": "Coupon validation"
+    },
+    {
+      "name": "orders",
+      "description": "Customer orders"
+    },
+    {
+      "name": "notifications",
+      "description": "In-app notifications"
+    },
+    {
+      "name": "settings",
+      "description": "Public store settings"
+    },
+    {
+      "name": "offers",
+      "description": "Public offers"
+    },
+    {
+      "name": "health",
+      "description": "Liveness and readiness"
+    },
+    {
+      "name": "admin-categories",
+      "description": "Admin category management"
+    },
+    {
+      "name": "admin-products",
+      "description": "Admin product management"
+    },
+    {
+      "name": "admin-inventory",
+      "description": "Admin inventory adjustments"
+    },
+    {
+      "name": "admin-offers",
+      "description": "Admin offers"
+    },
+    {
+      "name": "admin-coupons",
+      "description": "Admin coupons"
+    },
+    {
+      "name": "admin-orders",
+      "description": "Admin/employee order operations"
+    },
+    {
+      "name": "admin-reviews",
+      "description": "Admin review moderation"
+    },
+    {
+      "name": "admin-notifications",
+      "description": "Admin notification broadcast"
+    },
+    {
+      "name": "admin-delivery",
+      "description": "Admin delivery and pickup settings"
+    },
+    {
+      "name": "admin-analytics",
+      "description": "Admin dashboard analytics"
+    },
+    {
+      "name": "admin-customers",
+      "description": "Admin customer management"
+    },
+    {
+      "name": "admin-settings",
+      "description": "Admin AppSettings management"
+    },
+    {
+      "name": "admin-product-images",
+      "description": "Admin Pexels image search"
+    },
+    {
+      "name": "admin-audit",
+      "description": "Admin activity audit logs"
+    }
+  ],
   "servers": [],
   "components": {
     "securitySchemes": {
       "bearer": {
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "type": "http"
+        "type": "http",
+        "description": "Access JWT from auth endpoints"
       }
     },
     "schemas": {
@@ -9740,6 +10893,624 @@
           "isActive": {
             "type": "boolean",
             "default": true
+          }
+        }
+      },
+      "BulkTrackCampaignEventsDto": {
+        "type": "object",
+        "properties": {
+          "impressionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "clickIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "placement": {
+            "type": "string",
+            "enum": [
+              "HOME_HERO",
+              "HOME_SLIDER",
+              "HOME_STRIP",
+              "HOME_CATEGORY_STRIP",
+              "HOME_MIDDLE",
+              "HOME_BOTTOM",
+              "CATEGORY_TOP",
+              "CATEGORY_INLINE",
+              "PRODUCT_TOP",
+              "PRODUCT_AFTER_IMAGES",
+              "PRODUCT_BEFORE_DESCRIPTION",
+              "PRODUCT_BOTTOM",
+              "OFFERS_TOP",
+              "SEARCH_TOP",
+              "CART_TOP",
+              "CART_BOTTOM",
+              "CHECKOUT_TOP",
+              "CHECKOUT_BOTTOM",
+              "ORDER_SUCCESS"
+            ]
+          },
+          "sessionId": {
+            "type": "string"
+          }
+        }
+      },
+      "TrackCampaignEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "IMPRESSION",
+              "CLICK"
+            ],
+            "default": "IMPRESSION"
+          },
+          "placement": {
+            "type": "string",
+            "enum": [
+              "HOME_HERO",
+              "HOME_SLIDER",
+              "HOME_STRIP",
+              "HOME_CATEGORY_STRIP",
+              "HOME_MIDDLE",
+              "HOME_BOTTOM",
+              "CATEGORY_TOP",
+              "CATEGORY_INLINE",
+              "PRODUCT_TOP",
+              "PRODUCT_AFTER_IMAGES",
+              "PRODUCT_BEFORE_DESCRIPTION",
+              "PRODUCT_BOTTOM",
+              "OFFERS_TOP",
+              "SEARCH_TOP",
+              "CART_TOP",
+              "CART_BOTTOM",
+              "CHECKOUT_TOP",
+              "CHECKOUT_BOTTOM",
+              "ORDER_SUCCESS"
+            ]
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "Anonymous device/session id for frequency clients"
+          }
+        }
+      },
+      "CreateCampaignDto": {
+        "type": "object",
+        "properties": {
+          "titleAr": {
+            "type": "string",
+            "example": "عرض رمضان"
+          },
+          "titleEn": {
+            "type": "string",
+            "example": "Ramadan offer"
+          },
+          "subtitleAr": {
+            "type": "string",
+            "example": "خصومات تصل إلى 30%"
+          },
+          "subtitleEn": {
+            "type": "string",
+            "example": "Up to 30% off"
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0,
+            "description": "Legacy sort key (kept for compatibility)"
+          },
+          "priority": {
+            "type": "number",
+            "default": 0,
+            "description": "Higher priority wins for PRIORITY rotation"
+          },
+          "weight": {
+            "type": "number",
+            "default": 1,
+            "description": "Weight for WEIGHT rotation"
+          },
+          "rotationMode": {
+            "type": "string",
+            "enum": [
+              "PRIORITY",
+              "WEIGHT",
+              "RANDOM"
+            ],
+            "default": "PRIORITY"
+          },
+          "maxImpressions": {
+            "type": "object"
+          },
+          "maxClicks": {
+            "type": "object"
+          },
+          "placements": {
+            "type": "array",
+            "description": "One or more placements. Defaults to HOME_SLIDER when omitted.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "HOME_HERO",
+                "HOME_SLIDER",
+                "HOME_STRIP",
+                "HOME_CATEGORY_STRIP",
+                "HOME_MIDDLE",
+                "HOME_BOTTOM",
+                "CATEGORY_TOP",
+                "CATEGORY_INLINE",
+                "PRODUCT_TOP",
+                "PRODUCT_AFTER_IMAGES",
+                "PRODUCT_BEFORE_DESCRIPTION",
+                "PRODUCT_BOTTOM",
+                "OFFERS_TOP",
+                "SEARCH_TOP",
+                "CART_TOP",
+                "CART_BOTTOM",
+                "CHECKOUT_TOP",
+                "CHECKOUT_BOTTOM",
+                "ORDER_SUCCESS"
+              ]
+            }
+          },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "HERO_BANNER",
+              "SMALL_BANNER",
+              "STRIP_BANNER",
+              "SQUARE_CARD",
+              "POPUP",
+              "COUPON_CARD",
+              "FLOATING_BANNER",
+              "FLASH_SALE_CARD"
+            ],
+            "default": "HERO_BANNER"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "GUEST_ONLY",
+              "LOGGED_IN_ONLY"
+            ],
+            "default": "ALL"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "ALWAYS",
+              "ONCE",
+              "DAILY",
+              "EVERY_LAUNCH",
+              "EVERY_SESSION",
+              "DISMISS_HOURS"
+            ],
+            "default": "ALWAYS"
+          },
+          "dismissHours": {
+            "type": "object",
+            "description": "Required when frequency is DISMISS_HOURS"
+          },
+          "targetCities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetBranchIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetCategoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetProductIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetOfferIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetCouponIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "minCartAmount": {
+            "type": "object"
+          },
+          "maxCartAmount": {
+            "type": "object"
+          },
+          "backgroundColor": {
+            "type": "object",
+            "example": "#1B5E20"
+          },
+          "gradientFrom": {
+            "type": "object",
+            "example": "#1B5E20"
+          },
+          "gradientTo": {
+            "type": "object",
+            "example": "#66BB6A"
+          },
+          "badgeTextAr": {
+            "type": "object"
+          },
+          "badgeTextEn": {
+            "type": "object"
+          },
+          "discountBadgeAr": {
+            "type": "object"
+          },
+          "discountBadgeEn": {
+            "type": "object"
+          },
+          "ctaStyle": {
+            "type": "string",
+            "enum": [
+              "PRIMARY",
+              "SECONDARY",
+              "OUTLINE",
+              "TEXT",
+              "PILL"
+            ],
+            "default": "PRIMARY"
+          },
+          "textAlign": {
+            "type": "string",
+            "enum": [
+              "START",
+              "CENTER",
+              "END"
+            ],
+            "default": "START"
+          },
+          "overlayOpacity": {
+            "type": "object",
+            "default": 0.35
+          },
+          "cornerRadius": {
+            "type": "object",
+            "default": 16
+          },
+          "destinationType": {
+            "type": "string",
+            "enum": [
+              "OFFER",
+              "CATEGORY",
+              "PRODUCT",
+              "COUPON",
+              "CART",
+              "NONE",
+              "CHECKOUT",
+              "ORDERS",
+              "SEARCH",
+              "EXTERNAL_URL",
+              "INTERNAL_ROUTE"
+            ]
+          },
+          "destinationId": {
+            "type": "string",
+            "description": "Required when destinationType is OFFER, CATEGORY, PRODUCT, or COUPON"
+          },
+          "destinationUrl": {
+            "type": "string",
+            "description": "Required when destinationType is EXTERNAL_URL"
+          },
+          "destinationRoute": {
+            "type": "string",
+            "description": "Required when destinationType is INTERNAL_ROUTE (e.g. /offers)"
+          },
+          "autoApplyCoupon": {
+            "type": "boolean",
+            "default": false,
+            "description": "When destination is COUPON, signal client to auto-apply code"
+          },
+          "buttonLabelAr": {
+            "type": "string",
+            "example": "تسوق الآن"
+          },
+          "buttonLabelEn": {
+            "type": "string",
+            "example": "Shop now"
+          }
+        },
+        "required": [
+          "titleAr",
+          "titleEn",
+          "startsAt",
+          "endsAt",
+          "destinationType"
+        ]
+      },
+      "UpdateCampaignDto": {
+        "type": "object",
+        "properties": {
+          "titleAr": {
+            "type": "string",
+            "example": "عرض رمضان"
+          },
+          "titleEn": {
+            "type": "string",
+            "example": "Ramadan offer"
+          },
+          "subtitleAr": {
+            "type": "string",
+            "example": "خصومات تصل إلى 30%"
+          },
+          "subtitleEn": {
+            "type": "string",
+            "example": "Up to 30% off"
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0,
+            "description": "Legacy sort key (kept for compatibility)"
+          },
+          "priority": {
+            "type": "number",
+            "default": 0,
+            "description": "Higher priority wins for PRIORITY rotation"
+          },
+          "weight": {
+            "type": "number",
+            "default": 1,
+            "description": "Weight for WEIGHT rotation"
+          },
+          "rotationMode": {
+            "type": "string",
+            "enum": [
+              "PRIORITY",
+              "WEIGHT",
+              "RANDOM"
+            ],
+            "default": "PRIORITY"
+          },
+          "maxImpressions": {
+            "type": "object"
+          },
+          "maxClicks": {
+            "type": "object"
+          },
+          "placements": {
+            "type": "array",
+            "description": "One or more placements. Defaults to HOME_SLIDER when omitted.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "HOME_HERO",
+                "HOME_SLIDER",
+                "HOME_STRIP",
+                "HOME_CATEGORY_STRIP",
+                "HOME_MIDDLE",
+                "HOME_BOTTOM",
+                "CATEGORY_TOP",
+                "CATEGORY_INLINE",
+                "PRODUCT_TOP",
+                "PRODUCT_AFTER_IMAGES",
+                "PRODUCT_BEFORE_DESCRIPTION",
+                "PRODUCT_BOTTOM",
+                "OFFERS_TOP",
+                "SEARCH_TOP",
+                "CART_TOP",
+                "CART_BOTTOM",
+                "CHECKOUT_TOP",
+                "CHECKOUT_BOTTOM",
+                "ORDER_SUCCESS"
+              ]
+            }
+          },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "HERO_BANNER",
+              "SMALL_BANNER",
+              "STRIP_BANNER",
+              "SQUARE_CARD",
+              "POPUP",
+              "COUPON_CARD",
+              "FLOATING_BANNER",
+              "FLASH_SALE_CARD"
+            ],
+            "default": "HERO_BANNER"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "GUEST_ONLY",
+              "LOGGED_IN_ONLY"
+            ],
+            "default": "ALL"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "ALWAYS",
+              "ONCE",
+              "DAILY",
+              "EVERY_LAUNCH",
+              "EVERY_SESSION",
+              "DISMISS_HOURS"
+            ],
+            "default": "ALWAYS"
+          },
+          "dismissHours": {
+            "type": "object",
+            "description": "Required when frequency is DISMISS_HOURS"
+          },
+          "targetCities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetBranchIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetCategoryIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetProductIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetOfferIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetCouponIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "minCartAmount": {
+            "type": "object"
+          },
+          "maxCartAmount": {
+            "type": "object"
+          },
+          "backgroundColor": {
+            "type": "object",
+            "example": "#1B5E20"
+          },
+          "gradientFrom": {
+            "type": "object",
+            "example": "#1B5E20"
+          },
+          "gradientTo": {
+            "type": "object",
+            "example": "#66BB6A"
+          },
+          "badgeTextAr": {
+            "type": "object"
+          },
+          "badgeTextEn": {
+            "type": "object"
+          },
+          "discountBadgeAr": {
+            "type": "object"
+          },
+          "discountBadgeEn": {
+            "type": "object"
+          },
+          "ctaStyle": {
+            "type": "string",
+            "enum": [
+              "PRIMARY",
+              "SECONDARY",
+              "OUTLINE",
+              "TEXT",
+              "PILL"
+            ],
+            "default": "PRIMARY"
+          },
+          "textAlign": {
+            "type": "string",
+            "enum": [
+              "START",
+              "CENTER",
+              "END"
+            ],
+            "default": "START"
+          },
+          "overlayOpacity": {
+            "type": "object",
+            "default": 0.35
+          },
+          "cornerRadius": {
+            "type": "object",
+            "default": 16
+          },
+          "destinationType": {
+            "type": "string",
+            "enum": [
+              "OFFER",
+              "CATEGORY",
+              "PRODUCT",
+              "COUPON",
+              "CART",
+              "NONE",
+              "CHECKOUT",
+              "ORDERS",
+              "SEARCH",
+              "EXTERNAL_URL",
+              "INTERNAL_ROUTE"
+            ]
+          },
+          "destinationId": {
+            "type": "string",
+            "description": "Required when destinationType is OFFER, CATEGORY, PRODUCT, or COUPON"
+          },
+          "destinationUrl": {
+            "type": "string",
+            "description": "Required when destinationType is EXTERNAL_URL"
+          },
+          "destinationRoute": {
+            "type": "string",
+            "description": "Required when destinationType is INTERNAL_ROUTE (e.g. /offers)"
+          },
+          "autoApplyCoupon": {
+            "type": "boolean",
+            "default": false,
+            "description": "When destination is COUPON, signal client to auto-apply code"
+          },
+          "buttonLabelAr": {
+            "type": "string",
+            "example": "تسوق الآن"
+          },
+          "buttonLabelEn": {
+            "type": "string",
+            "example": "Shop now"
           }
         }
       },

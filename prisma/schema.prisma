@@ -87,6 +87,84 @@ enum CampaignDestinationType {
   COUPON
   CART
   NONE
+  CHECKOUT
+  ORDERS
+  SEARCH
+  EXTERNAL_URL
+  INTERNAL_ROUTE
+}
+
+enum CampaignPlacement {
+  HOME_HERO
+  HOME_SLIDER
+  HOME_STRIP
+  HOME_CATEGORY_STRIP
+  HOME_MIDDLE
+  HOME_BOTTOM
+  CATEGORY_TOP
+  CATEGORY_INLINE
+  PRODUCT_TOP
+  PRODUCT_AFTER_IMAGES
+  PRODUCT_BEFORE_DESCRIPTION
+  PRODUCT_BOTTOM
+  OFFERS_TOP
+  SEARCH_TOP
+  CART_TOP
+  CART_BOTTOM
+  CHECKOUT_TOP
+  CHECKOUT_BOTTOM
+  ORDER_SUCCESS
+}
+
+enum CampaignLayout {
+  HERO_BANNER
+  SMALL_BANNER
+  STRIP_BANNER
+  SQUARE_CARD
+  POPUP
+  COUPON_CARD
+  FLOATING_BANNER
+  FLASH_SALE_CARD
+}
+
+enum CampaignAudience {
+  ALL
+  GUEST_ONLY
+  LOGGED_IN_ONLY
+}
+
+enum CampaignFrequency {
+  ALWAYS
+  ONCE
+  DAILY
+  EVERY_LAUNCH
+  EVERY_SESSION
+  DISMISS_HOURS
+}
+
+enum CampaignRotationMode {
+  PRIORITY
+  WEIGHT
+  RANDOM
+}
+
+enum CampaignCtaStyle {
+  PRIMARY
+  SECONDARY
+  OUTLINE
+  TEXT
+  PILL
+}
+
+enum CampaignTextAlign {
+  START
+  CENTER
+  END
+}
+
+enum CampaignEventType {
+  IMPRESSION
+  CLICK
 }
 
 enum NotificationType {
@@ -375,26 +453,94 @@ model CouponUsage {
 }
 
 model Campaign {
-  id               String                   @id @default(uuid())
-  titleAr          String
-  titleEn          String
-  subtitleAr       String?
-  subtitleEn       String?
-  imagePath        String?
-  isActive         Boolean                  @default(true)
-  startsAt         DateTime
-  endsAt           DateTime
-  sortOrder        Int                      @default(0)
-  destinationType  CampaignDestinationType  @default(NONE)
-  destinationId    String?
-  buttonLabelAr    String?
-  buttonLabelEn    String?
-  deletedAt        DateTime?
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
+  id                 String                  @id @default(uuid())
+  titleAr            String
+  titleEn            String
+  subtitleAr         String?
+  subtitleEn         String?
+  imagePath          String?
+  iconPath           String?
+  isActive           Boolean                 @default(true)
+  startsAt           DateTime
+  endsAt             DateTime
+  sortOrder          Int                     @default(0)
+  priority           Int                     @default(0)
+  weight             Int                     @default(1)
+  rotationMode       CampaignRotationMode    @default(PRIORITY)
+  maxImpressions     Int?
+  maxClicks          Int?
+  layout             CampaignLayout          @default(HERO_BANNER)
+  audience           CampaignAudience        @default(ALL)
+  frequency          CampaignFrequency       @default(ALWAYS)
+  dismissHours       Int?
+  targetCities       String[]                @default([])
+  targetBranchIds    String[]                @default([])
+  targetCategoryIds  String[]                @default([])
+  targetProductIds   String[]                @default([])
+  targetOfferIds     String[]                @default([])
+  targetCouponIds    String[]                @default([])
+  minCartAmount      Decimal?                @db.Decimal(12, 2)
+  maxCartAmount      Decimal?                @db.Decimal(12, 2)
+  backgroundColor    String?
+  gradientFrom       String?
+  gradientTo         String?
+  badgeTextAr        String?
+  badgeTextEn        String?
+  discountBadgeAr    String?
+  discountBadgeEn    String?
+  ctaStyle           CampaignCtaStyle        @default(PRIMARY)
+  textAlign          CampaignTextAlign       @default(START)
+  overlayOpacity     Float?                  @default(0.35)
+  cornerRadius       Int?                    @default(16)
+  destinationType    CampaignDestinationType @default(NONE)
+  destinationId      String?
+  destinationUrl     String?
+  destinationRoute   String?
+  autoApplyCoupon    Boolean                 @default(false)
+  buttonLabelAr      String?
+  buttonLabelEn      String?
+  impressionCount    Int                     @default(0)
+  clickCount         Int                     @default(0)
+  lastViewedAt       DateTime?
+  lastClickedAt      DateTime?
+  deletedAt          DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  placements CampaignPlacementAssignment[]
+  events     CampaignEvent[]
 
   @@index([isActive, startsAt, endsAt, sortOrder])
   @@index([sortOrder])
+  @@index([priority])
+  @@index([layout])
+}
+
+model CampaignPlacementAssignment {
+  id         String            @id @default(uuid())
+  campaignId String
+  placement  CampaignPlacement
+  createdAt  DateTime          @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, placement])
+  @@index([placement])
+}
+
+model CampaignEvent {
+  id         String             @id @default(uuid())
+  campaignId String
+  type       CampaignEventType
+  placement  CampaignPlacement?
+  userId     String?
+  sessionId  String?
+  createdAt  DateTime           @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, type, createdAt])
+  @@index([createdAt])
 }
 
 model Cart {
