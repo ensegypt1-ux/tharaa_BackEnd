@@ -156,8 +156,35 @@ export class AdminOffersController {
     return result;
   }
 
+  @Delete(':id/image')
+  @ApiOperation({ summary: 'Remove offer image' })
+  @ApiResponse({
+    status: 200,
+    description: 'Image removed',
+    type: ApiSuccessDto,
+  })
+  @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
+  async removeImage(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const updated = await this.offersService.removeImage(id);
+    await this.audit.log({
+      userId: user.id,
+      userRole: user.role,
+      userEmail: user.email,
+      action: 'OFFER_IMAGE_REMOVE',
+      entityType: 'Offer',
+      entityId: id,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    return updated;
+  }
+
   @Post(':id/image')
-  @ApiOperation({ summary: 'Upload offer image' })
+  @ApiOperation({ summary: 'Upload or replace offer image' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

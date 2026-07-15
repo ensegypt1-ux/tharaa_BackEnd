@@ -215,6 +215,23 @@ export class OffersService {
     return this.toAdmin(updated);
   }
 
+  async removeImage(id: string) {
+    const offer = await this.findExistingOrThrow(id);
+    if (offer.imagePath) {
+      try {
+        await this.storage.delete(offer.imagePath);
+      } catch {
+        // best-effort cleanup
+      }
+    }
+    const updated = await this.prisma.offer.update({
+      where: { id },
+      data: { imagePath: null },
+      include: { products: true },
+    });
+    return this.toAdmin(updated);
+  }
+
   /**
    * Load currently active offers relevant to the given products/categories
    * for PricingService.calculateUnitPrice.

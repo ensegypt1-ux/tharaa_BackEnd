@@ -135,6 +135,7 @@ Adjustments create `InventoryMovement` records; reserved quantity cannot go inva
 | GET/POST | `/admin/offers` | ADMIN, MANAGER |
 | GET/PATCH/DELETE | `/admin/offers/:id` | ADMIN, MANAGER |
 | POST | `/admin/offers/:id/image` | ADMIN, MANAGER |
+| DELETE | `/admin/offers/:id/image` | ADMIN, MANAGER |
 | GET/POST | `/admin/coupons` | ADMIN, MANAGER |
 | GET/PATCH/DELETE | `/admin/coupons/:id` | ADMIN, MANAGER |
 
@@ -155,10 +156,40 @@ Secrets (password hashes, refresh/reset tokens) are never returned.
 | Method | Endpoint | Roles |
 |---|---|---|
 | GET | `/admin/reviews` | ADMIN, MANAGER |
+| GET | `/admin/reviews/stats` | ADMIN, MANAGER |
+| GET | `/admin/reviews/reports` | ADMIN, MANAGER |
+| PATCH | `/admin/reviews/reports/:reportId/resolve` | ADMIN, MANAGER |
 | PATCH | `/admin/reviews/:id/approve` | ADMIN, MANAGER |
 | PATCH | `/admin/reviews/:id/reject` | ADMIN, MANAGER |
 | PATCH | `/admin/reviews/:id/hide` | ADMIN, MANAGER |
 | PATCH | `/admin/reviews/:id/show` | ADMIN, MANAGER |
+| PATCH | `/admin/reviews/:id/restore` | ADMIN, MANAGER |
+| PUT | `/admin/reviews/:id/reply` | ADMIN, MANAGER |
+| DELETE | `/admin/reviews/:id/reply` | ADMIN, MANAGER |
+
+Admin list query: `page`, `limit`, `status`, `isVisible`, `rating`, `productId`, `userId`, `reported`, `includeDeleted`, `from`, `to`, `sort=newest\|oldest\|highest\|lowest`.
+
+Admin stats: pending / approved / rejected / hidden / reported + average moderation time (minutes).
+
+Store reply fields on the review (`replyText`, `repliedAt`, `replyByUserId`) are returned on admin payloads and as `storeReply: { text, repliedAt }` on public reviews (no admin identity).
+
+Customer (authenticated) review APIs:
+
+| Method | Endpoint | Notes |
+|---|---|---|
+| GET | `/products/:id/reviews/eligibility` | Completed-order eligibility |
+| GET | `/reviews/me` | Own reviews |
+| PATCH | `/reviews/:id` | Update own (approved → PENDING) |
+| DELETE | `/reviews/:id` | Soft-delete own |
+| POST | `/reviews/:id/report` | Report public review |
+
+Public:
+
+| Method | Endpoint | Notes |
+|---|---|---|
+| GET | `/products/:id/reviews` | `sort=newest\|oldest\|highest\|lowest` |
+| GET | `/products/:id/reviews/stats` | Average, count, histogram, verified count |
+| POST | `/products/:productId/reviews` | Purchase-gated create (unchanged) |
 
 ## Notifications
 

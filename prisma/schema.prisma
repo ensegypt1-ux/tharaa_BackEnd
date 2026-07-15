@@ -74,6 +74,12 @@ enum ReviewStatus {
   REJECTED
 }
 
+enum ReviewReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
 enum NotificationType {
   ORDER_STATUS
   OFFER
@@ -106,10 +112,14 @@ model User {
   orders           Order[]
   notifications    Notification[]
   deviceTokens     DeviceToken[]
-  reviews          ProductReview[]
-  couponUsages     CouponUsage[]
-  inventoryMoves   InventoryMovement[] @relation("InventoryMovedBy")
-  statusChanges    OrderStatusHistory[] @relation("StatusChangedBy")
+  reviews             ProductReview[]
+  reviewReplies       ProductReview[]      @relation("ReviewReplies")
+  reviewModerations   ProductReview[]      @relation("ReviewModerations")
+  reviewReports       ReviewReport[]       @relation("ReviewReports")
+  resolvedReports     ReviewReport[]       @relation("ResolvedReviewReports")
+  couponUsages        CouponUsage[]
+  inventoryMoves      InventoryMovement[]  @relation("InventoryMovedBy")
+  statusChanges       OrderStatusHistory[] @relation("StatusChangedBy")
 
   @@index([role])
   @@index([status])
@@ -525,24 +535,55 @@ model DeviceToken {
 }
 
 model ProductReview {
-  id          String       @id @default(uuid())
-  productId   String
-  userId      String
-  orderItemId String       @unique
-  rating      Int
-  comment     String?
-  status      ReviewStatus @default(PENDING)
-  isVisible   Boolean      @default(false)
-  deletedAt   DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id            String       @id @default(uuid())
+  productId     String
+  userId        String
+  orderItemId   String       @unique
+  rating        Int
+  comment       String?
+  status        ReviewStatus @default(PENDING)
+  isVisible     Boolean      @default(false)
+  replyText     String?
+  replyByUserId String?
+  repliedAt     DateTime?
+  moderatedAt   DateTime?
+  moderatedById String?
+  deletedAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  product   Product   @relation(fields: [productId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  product     Product        @relation(fields: [productId], references: [id])
+  user        User           @relation(fields: [userId], references: [id])
+  orderItem   OrderItem      @relation(fields: [orderItemId], references: [id])
+  replyByUser User?          @relation("ReviewReplies", fields: [replyByUserId], references: [id])
+  moderatedBy User?          @relation("ReviewModerations", fields: [moderatedById], references: [id])
+  reports     ReviewReport[]
 
   @@unique([userId, orderItemId])
   @@index([productId, status, isVisible])
+  @@index([userId, deletedAt])
+  @@index([createdAt])
+}
+
+model ReviewReport {
+  id             String             @id @default(uuid())
+  reviewId       String
+  reporterId     String
+  reason         String
+  status         ReviewReportStatus @default(OPEN)
+  resolutionNote String?
+  resolvedAt     DateTime?
+  resolvedById   String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  review     ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reporter   User          @relation("ReviewReports", fields: [reporterId], references: [id])
+  resolvedBy User?         @relation("ResolvedReviewReports", fields: [resolvedById], references: [id])
+
+  @@unique([reviewId, reporterId])
+  @@index([status, createdAt])
+  @@index([reviewId])
 }
 
 model AppSettings {

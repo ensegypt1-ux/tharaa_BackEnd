@@ -3907,9 +3907,73 @@
       }
     },
     "/api/v1/admin/offers/{id}/image": {
+      "delete": {
+        "operationId": "AdminOffersController_removeImage",
+        "summary": "Remove offer image",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-offers"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "post": {
         "operationId": "AdminOffersController_uploadImage",
-        "summary": "Upload offer image",
+        "summary": "Upload or replace offer image",
         "parameters": [
           {
             "name": "id",
@@ -5781,9 +5845,106 @@
         ]
       }
     },
+    "/api/v1/products/{id}/reviews/stats": {
+      "get": {
+        "operationId": "ProductReviewsController_publicStats",
+        "summary": "Public product review statistics",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/products/{id}/reviews/eligibility": {
+      "get": {
+        "operationId": "ProductReviewsController_eligibility",
+        "summary": "Check whether the current user can review this product",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eligibility retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/products/{id}/reviews": {
       "get": {
-        "operationId": "ReviewsController_listPublic",
+        "operationId": "ProductReviewsController_listPublic",
         "summary": "List approved visible product reviews",
         "parameters": [
           {
@@ -5791,6 +5952,21 @@
             "required": true,
             "in": "path",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "enum": [
+                "newest",
+                "oldest",
+                "highest",
+                "lowest"
+              ],
               "type": "string"
             }
           }
@@ -5824,7 +6000,7 @@
     },
     "/api/v1/products/{productId}/reviews": {
       "post": {
-        "operationId": "ReviewsController_create",
+        "operationId": "ProductReviewsController_create",
         "summary": "Submit a product review for a completed order item",
         "parameters": [
           {
@@ -5898,6 +6074,411 @@
         ]
       }
     },
+    "/api/v1/reviews/me": {
+      "get": {
+        "operationId": "CustomerReviewsController_listMine",
+        "summary": "List the authenticated customer reviews",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Customer reviews listed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reviews/{id}": {
+      "patch": {
+        "operationId": "CustomerReviewsController_update",
+        "summary": "Update own review (approved reviews return to PENDING moderation)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Review updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "CustomerReviewsController_remove",
+        "summary": "Soft-delete own review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reviews/{id}/report": {
+      "post": {
+        "operationId": "CustomerReviewsController_report",
+        "summary": "Report a public review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Report submitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/stats": {
+      "get": {
+        "operationId": "AdminReviewsController_stats",
+        "summary": "Admin review moderation statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Stats retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/reports": {
+      "get": {
+        "operationId": "AdminReviewsController_listReports",
+        "summary": "List review reports",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "OPEN",
+                "RESOLVED",
+                "DISMISSED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "reviewId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reports listed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/reports/{reportId}/resolve": {
+      "patch": {
+        "operationId": "AdminReviewsController_resolveReport",
+        "summary": "Resolve or dismiss a review report",
+        "parameters": [
+          {
+            "name": "reportId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReviewReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report resolved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/reviews": {
       "get": {
         "operationId": "AdminReviewsController_list",
@@ -5912,6 +6493,91 @@
                 "PENDING",
                 "APPROVED",
                 "REJECTED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "isVisible",
+            "required": false,
+            "in": "query",
+            "description": "Filter by visibility",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "rating",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 5,
+              "type": "number"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "description": "Customer user id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reported",
+            "required": false,
+            "in": "query",
+            "description": "Only reviews with open reports",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDeleted",
+            "required": false,
+            "in": "query",
+            "description": "Include soft-deleted reviews",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "enum": [
+                "newest",
+                "oldest",
+                "highest",
+                "lowest"
               ],
               "type": "string"
             }
@@ -6164,6 +6830,182 @@
         "responses": {
           "200": {
             "description": "Review shown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/{id}/restore": {
+      "patch": {
+        "operationId": "AdminReviewsController_restore",
+        "summary": "Restore a soft-deleted review as PENDING",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review restored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/{id}/reply": {
+      "put": {
+        "operationId": "AdminReviewsController_setReply",
+        "summary": "Add or update store reply on a review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewReplyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reply saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-reviews"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "AdminReviewsController_removeReply",
+        "summary": "Remove store reply from a review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reply removed",
             "content": {
               "application/json": {
                 "schema": {
@@ -7673,128 +8515,18 @@
   },
   "info": {
     "title": "Tharaa Market API",
-    "description": "Official **Version 1** REST API contract for Tharaa Market (Al Khafji).\n\n### Stability\nThis API is **frozen**. Breaking changes to URLs, request/response bodies, enums, pagination, auth, uploads, or error envelopes are not allowed in v1.\nFuture incompatible changes must ship as `/api/v2`.\n\n### Response envelope\nSuccess: `{ success: true, data, meta? }`\nError: `{ success: false, statusCode, message, errorCode?, details?, timestamp, path }`\n\n### Authentication\nUse `Authorization: Bearer <accessToken>`. Obtain tokens via `/auth/login`, `/auth/register`, `/auth/google`, or `/auth/refresh`.\nRefresh tokens rotate on every use.\n\n### Uploads\nMultipart form field name: `file`. Allowed MIME: jpeg, png, webp. Served under `/static/`.\n\n### Admin realtime (Socket.IO)\nNamespace `/admin` for staff dashboards. Authenticate with the JWT access token (`auth.token` or `Authorization: Bearer`).\nEvents: `admin:order_created`, `admin:order_updated`. Roles: ADMIN, MANAGER, EMPLOYEE.\nFull contract: `docs/ADMIN_INTEGRATION.md` (Realtime section). REST remains the source of truth.",
+    "description": "",
     "version": "1.0.0",
     "contact": {}
   },
-  "tags": [
-    {
-      "name": "bootstrap",
-      "description": "App startup configuration"
-    },
-    {
-      "name": "auth",
-      "description": "Authentication and token management"
-    },
-    {
-      "name": "users",
-      "description": "Customer profile and device tokens"
-    },
-    {
-      "name": "addresses",
-      "description": "Customer delivery addresses"
-    },
-    {
-      "name": "categories",
-      "description": "Public catalog categories"
-    },
-    {
-      "name": "products",
-      "description": "Public catalog products and reviews"
-    },
-    {
-      "name": "cart",
-      "description": "Authenticated shopping cart"
-    },
-    {
-      "name": "coupons",
-      "description": "Coupon validation"
-    },
-    {
-      "name": "orders",
-      "description": "Customer orders"
-    },
-    {
-      "name": "notifications",
-      "description": "In-app notifications"
-    },
-    {
-      "name": "settings",
-      "description": "Public store settings"
-    },
-    {
-      "name": "offers",
-      "description": "Public offers"
-    },
-    {
-      "name": "health",
-      "description": "Liveness and readiness"
-    },
-    {
-      "name": "admin-categories",
-      "description": "Admin category management"
-    },
-    {
-      "name": "admin-products",
-      "description": "Admin product management"
-    },
-    {
-      "name": "admin-inventory",
-      "description": "Admin inventory adjustments"
-    },
-    {
-      "name": "admin-offers",
-      "description": "Admin offers"
-    },
-    {
-      "name": "admin-coupons",
-      "description": "Admin coupons"
-    },
-    {
-      "name": "admin-orders",
-      "description": "Admin/employee order operations"
-    },
-    {
-      "name": "admin-reviews",
-      "description": "Admin review moderation"
-    },
-    {
-      "name": "admin-notifications",
-      "description": "Admin notification broadcast"
-    },
-    {
-      "name": "admin-delivery",
-      "description": "Admin delivery and pickup settings"
-    },
-    {
-      "name": "admin-analytics",
-      "description": "Admin dashboard analytics"
-    },
-    {
-      "name": "admin-customers",
-      "description": "Admin customer management"
-    },
-    {
-      "name": "admin-settings",
-      "description": "Admin AppSettings management"
-    },
-    {
-      "name": "admin-product-images",
-      "description": "Admin Pexels image search"
-    },
-    {
-      "name": "admin-audit",
-      "description": "Admin activity audit logs"
-    }
-  ],
+  "tags": [],
   "servers": [],
   "components": {
     "securitySchemes": {
       "bearer": {
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "type": "http",
-        "description": "Access JWT from auth endpoints"
+        "type": "http"
       }
     },
     "schemas": {
@@ -9357,6 +10089,57 @@
         "required": [
           "orderItemId",
           "rating"
+        ]
+      },
+      "UpdateReviewDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      },
+      "ReportReviewDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ResolveReviewReportDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "DISMISSED"
+            ]
+          },
+          "resolutionNote": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewReplyDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
         ]
       },
       "UpdateCustomerStatusDto": {
