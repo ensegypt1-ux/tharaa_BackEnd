@@ -159,6 +159,7 @@ model Address {
 
 model Category {
   id        String    @id @default(uuid())
+  parentId  String?
   nameAr    String
   nameEn    String
   imagePath String?
@@ -168,10 +169,13 @@ model Category {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryHierarchy")
   products Product[]
   offers   Offer[]
 
   @@index([isActive, sortOrder])
+  @@index([parentId])
 }
 
 model Product {

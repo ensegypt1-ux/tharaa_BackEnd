@@ -2073,6 +2073,15 @@
             }
           },
           {
+            "name": "includeChildren",
+            "required": false,
+            "in": "query",
+            "description": "Include products from direct subcategories. When omitted: parent categories automatically include descendants; child/leaf categories stay direct-only. When false: always direct products only. When true: always include direct children.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "isFeatured",
             "required": false,
             "in": "query",
@@ -2239,6 +2248,15 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "includeChildren",
+            "required": false,
+            "in": "query",
+            "description": "Include products from direct subcategories. When omitted: parent categories automatically include descendants; child/leaf categories stay direct-only. When false: always direct products only. When true: always include direct children.",
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -2632,6 +2650,73 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-products"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/products/bulk-reassign": {
+      "post": {
+        "operationId": "AdminProductsController_bulkReassign",
+        "summary": "Bulk reassign products to a category/subcategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReassignProductsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Products reassigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
@@ -8466,6 +8551,11 @@
             "type": "string",
             "example": "Vegetables"
           },
+          "parentId": {
+            "type": "object",
+            "description": "Optional parent category id. Null/omitted = main category. Parent must itself be a main category (one nesting level).",
+            "nullable": true
+          },
           "sortOrder": {
             "type": "number",
             "example": 0,
@@ -8492,6 +8582,11 @@
           "nameEn": {
             "type": "string",
             "example": "Vegetables"
+          },
+          "parentId": {
+            "type": "object",
+            "description": "Optional parent category id. Null/omitted = main category. Parent must itself be a main category (one nesting level).",
+            "nullable": true
           },
           "sortOrder": {
             "type": "number",
@@ -8597,6 +8692,26 @@
           "nameEn",
           "unit",
           "regularPrice"
+        ]
+      },
+      "BulkReassignProductsDto": {
+        "type": "object",
+        "properties": {
+          "productIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "categoryId": {
+            "type": "string",
+            "description": "Target main category or subcategory id"
+          }
+        },
+        "required": [
+          "productIds",
+          "categoryId"
         ]
       },
       "UpdateProductDto": {

@@ -26,7 +26,9 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "setup": "npm run db:up && npx prisma migrate deploy && npm run prisma:seed",
-    "verify": "npm run prisma:validate && npm run build && npm test && npm run test:e2e"
+    "verify": "npm run prisma:validate && npm run build && npm test && npm run test:e2e",
+    "organize:subcategories:dry": "ts-node --transpile-only prisma/scripts/organize-subcategories.ts --dry-run",
+    "organize:subcategories": "ts-node --transpile-only prisma/scripts/organize-subcategories.ts --apply"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

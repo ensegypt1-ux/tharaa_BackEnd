@@ -34,6 +34,7 @@ import { STORAGE_SERVICE, StorageService } from '../uploads/storage.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { ListProductsDto } from './dto/list-products.dto';
+import { BulkReassignProductsDto } from './dto/bulk-reassign-products.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import { ProductsService } from './products.service';
@@ -102,6 +103,38 @@ export class AdminProductsController {
       userAgent: req.headers['user-agent'],
     });
     return created;
+  }
+
+  @Post('bulk-reassign')
+  @ApiOperation({ summary: 'Bulk reassign products to a category/subcategory' })
+  @ApiResponse({
+    status: 200,
+    description: 'Products reassigned',
+    type: ApiSuccessDto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
+  async bulkReassign(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Body() dto: BulkReassignProductsDto,
+  ) {
+    const result = await this.productsService.bulkReassign(dto);
+    await this.audit.log({
+      userId: user.id,
+      userRole: user.role,
+      userEmail: user.email,
+      action: 'PRODUCT_BULK_REASSIGN',
+      entityType: 'Product',
+      entityId: dto.categoryId,
+      newValues: {
+        categoryId: dto.categoryId,
+        productIds: dto.productIds,
+        updated: result.updated,
+      },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+    return result;
   }
 
   @Patch(':id')

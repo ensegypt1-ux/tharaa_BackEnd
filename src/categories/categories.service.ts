@@ -20,11 +20,16 @@ const PUBLIC_CATEGORIES_TTL_SECONDS = 60;
 
 export type PublicCategory = {
   id: string;
+  parentId: string | null;
   nameAr: string;
   nameEn: string;
   imageUrl: string | null;
   sortOrder: number;
   isActive: boolean;
+  productCount?: number;
+  /** True when recursive active product total is zero. */
+  isEmpty?: boolean;
+  children?: PublicCategory[];
 };
 
 type PexelsPhoto = {
@@ -68,13 +73,27 @@ export class CategoriesService {
       orderBy: [{ sortOrder: 'asc' }, { nameEn: 'asc' }],
     });
 
-    const mapped = categories.map((c) => this.toPublic(c));
+    // One aggregation for all categories — direct active product counts only.
+    const counts = await this.prisma.product.groupBy({
+      by: ['categoryId'],
+      where: { deletedAt: null, isActive: true },
+      _count: { _all: true },
+    });
+    const directCountMap = new Map(
+      counts.map((row) => [row.categoryId, row._count._all]),
+    );
+
+    const mapped = categories.map((c) =>
+      this.toPublic(c, { productCount: directCountMap.get(c.id) ?? 0 }),
+    );
+    const tree = this.buildPublicTree(mapped);
+    this.applyRecursiveProductCounts(tree);
     await this.redis.setJson(
       PUBLIC_CATEGORIES_CACHE_KEY,
-      mapped,
+      tree,
       PUBLIC_CATEGORIES_TTL_SECONDS,
     );
-    return mapped;
+    return tree;
   }
 
   async findPublicById(id: string): Promise<PublicCategory> {
@@ -84,7 +103,44 @@ export class CategoriesService {
     if (!category) {
       throw new NotFoundException('Category not found');
     }
-    return this.toPublic(category);
+
+    const children = await this.prisma.category.findMany({
+      where: {
+        parentId: id,
+        deletedAt: null,
+        isActive: true,
+      },
+      orderBy: [{ sortOrder: 'asc' }, { nameEn: 'asc' }],
+    });
+
+    const ids = [id, ...children.map((c) => c.id)];
+    const counts = await this.prisma.product.groupBy({
+      by: ['categoryId'],
+      where: { deletedAt: null, isActive: true, categoryId: { in: ids } },
+      _count: { _all: true },
+    });
+    const directCountMap = new Map(
+      counts.map((row) => [row.categoryId, row._count._all]),
+    );
+
+    const childNodes = children.map((c) => {
+      const direct = directCountMap.get(c.id) ?? 0;
+      return this.toPublic(c, {
+        productCount: direct,
+        isEmpty: direct === 0,
+      });
+    });
+    const direct = directCountMap.get(category.id) ?? 0;
+    const recursive =
+      direct + childNodes.reduce((sum, c) => sum + (c.productCount ?? 0), 0);
+
+    return {
+      ...this.toPublic(category, {
+        productCount: recursive,
+        isEmpty: recursive === 0,
+      }),
+      children: childNodes,
+    };
   }
 
   async adminList() {
@@ -132,14 +188,45 @@ export class CategoriesService {
       outOfStockRows.map((r) => [r.categoryId, Number(r.count)]),
     );
 
+    const parentNameById = new Map(
+      categories.map((c) => [c.id, { nameAr: c.nameAr, nameEn: c.nameEn }]),
+    );
+
+    const childIdsByParent = new Map<string, string[]>();
+    for (const c of categories) {
+      if (!c.parentId) continue;
+      const list = childIdsByParent.get(c.parentId) ?? [];
+      list.push(c.id);
+      childIdsByParent.set(c.parentId, list);
+    }
+
     return categories.map((c) => {
       const split = countMap.get(c.id) ?? { active: 0, inactive: 0 };
-      return this.toAdmin(c, {
-        productCount: split.active + split.inactive,
-        activeProductCount: split.active,
-        inactiveProductCount: split.inactive,
-        outOfStockProductCount: outOfStockMap.get(c.id) ?? 0,
-      });
+      const childIds = childIdsByParent.get(c.id) ?? [];
+      let childrenProductCount = 0;
+      for (const childId of childIds) {
+        const childSplit = countMap.get(childId);
+        if (childSplit) {
+          childrenProductCount += childSplit.active + childSplit.inactive;
+        }
+      }
+      const parent = c.parentId ? parentNameById.get(c.parentId) : null;
+      return this.toAdmin(
+        c,
+        {
+          productCount: split.active + split.inactive,
+          activeProductCount: split.active,
+          inactiveProductCount: split.inactive,
+          outOfStockProductCount: outOfStockMap.get(c.id) ?? 0,
+        },
+        {
+          parentNameAr: parent?.nameAr ?? null,
+          parentNameEn: parent?.nameEn ?? null,
+          childrenCount: childIds.length,
+          childrenProductCount,
+          totalProductCount: split.active + split.inactive + childrenProductCount,
+        },
+      );
     });
   }
 
@@ -154,12 +241,48 @@ export class CategoriesService {
       }),
       this.countOutOfStock(id),
     ]);
-    return this.toAdmin(category, {
-      productCount: active + inactive,
-      activeProductCount: active,
-      inactiveProductCount: inactive,
-      outOfStockProductCount: outOfStock,
+
+    let parentNameAr: string | null = null;
+    let parentNameEn: string | null = null;
+    if (category.parentId) {
+      const parent = await this.prisma.category.findFirst({
+        where: { id: category.parentId, deletedAt: null },
+        select: { nameAr: true, nameEn: true },
+      });
+      parentNameAr = parent?.nameAr ?? null;
+      parentNameEn = parent?.nameEn ?? null;
+    }
+
+    const children = await this.prisma.category.findMany({
+      where: { parentId: id, deletedAt: null },
+      select: { id: true },
     });
+    let childrenProductCount = 0;
+    if (children.length) {
+      childrenProductCount = await this.prisma.product.count({
+        where: {
+          deletedAt: null,
+          categoryId: { in: children.map((c) => c.id) },
+        },
+      });
+    }
+
+    return this.toAdmin(
+      category,
+      {
+        productCount: active + inactive,
+        activeProductCount: active,
+        inactiveProductCount: inactive,
+        outOfStockProductCount: outOfStock,
+      },
+      {
+        parentNameAr,
+        parentNameEn,
+        childrenCount: children.length,
+        childrenProductCount,
+        totalProductCount: active + inactive + childrenProductCount,
+      },
+    );
   }
 
   async getStats(id: string) {
@@ -215,8 +338,10 @@ export class CategoriesService {
   }
 
   async create(dto: CreateCategoryDto) {
+    const parentId = await this.resolveParentId(dto.parentId);
     const category = await this.prisma.category.create({
       data: {
+        parentId,
         nameAr: dto.nameAr.trim(),
         nameEn: dto.nameEn.trim(),
         sortOrder: dto.sortOrder ?? 0,
@@ -230,6 +355,24 @@ export class CategoriesService {
   async update(id: string, dto: UpdateCategoryDto) {
     await this.findExistingOrThrow(id);
 
+    let parentId: string | null | undefined = undefined;
+    if (dto.parentId !== undefined) {
+      parentId = await this.resolveParentId(dto.parentId, id);
+    }
+
+    // Disallow turning a parent into a subcategory if it already has children.
+    if (parentId) {
+      const childCount = await this.prisma.category.count({
+        where: { parentId: id, deletedAt: null },
+      });
+      if (childCount > 0) {
+        throw new BadRequestException({
+          message: 'Cannot nest a category that already has subcategories',
+          errorCode: 'CATEGORY_HAS_CHILDREN',
+        });
+      }
+    }
+
     await this.prisma.category.update({
       where: { id },
       data: {
@@ -237,6 +380,7 @@ export class CategoriesService {
         ...(dto.nameEn !== undefined ? { nameEn: dto.nameEn.trim() } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        ...(parentId !== undefined ? { parentId } : {}),
       },
     });
     await this.invalidatePublicCache();
@@ -448,6 +592,75 @@ export class CategoriesService {
     return Number(rows[0]?.c ?? 0);
   }
 
+  private async resolveParentId(
+    parentId: string | null | undefined,
+    selfId?: string,
+  ): Promise<string | null> {
+    if (parentId === undefined || parentId === null || parentId === '') {
+      return null;
+    }
+    if (selfId && parentId === selfId) {
+      throw new BadRequestException({
+        message: 'Category cannot be its own parent',
+        errorCode: 'CATEGORY_CIRCULAR_PARENT',
+      });
+    }
+    const parent = await this.prisma.category.findFirst({
+      where: { id: parentId, deletedAt: null },
+    });
+    if (!parent) {
+      throw new BadRequestException({
+        message: 'Parent category not found',
+        errorCode: 'PARENT_CATEGORY_NOT_FOUND',
+      });
+    }
+    if (parent.parentId) {
+      throw new BadRequestException({
+        message: 'Only one level of nesting is allowed',
+        errorCode: 'CATEGORY_NESTING_DEPTH',
+      });
+    }
+    return parent.id;
+  }
+
+  private buildPublicTree(flat: PublicCategory[]): PublicCategory[] {
+    const byParent = new Map<string | null, PublicCategory[]>();
+    for (const cat of flat) {
+      const key = cat.parentId;
+      const list = byParent.get(key) ?? [];
+      list.push({ ...cat, children: [] });
+      byParent.set(key, list);
+    }
+    const roots = byParent.get(null) ?? [];
+    for (const root of roots) {
+      root.children = byParent.get(root.id) ?? [];
+    }
+    return roots;
+  }
+
+  /**
+   * After tree build (1 nesting level):
+   * - children keep direct productCount
+   * - parents get direct + sum(children)
+   * - isEmpty uses the recursive total for each node
+   */
+  private applyRecursiveProductCounts(roots: PublicCategory[]): void {
+    for (const root of roots) {
+      const children = root.children ?? [];
+      for (const child of children) {
+        const direct = child.productCount ?? 0;
+        child.isEmpty = direct === 0;
+      }
+      const childrenTotal = children.reduce(
+        (sum, c) => sum + (c.productCount ?? 0),
+        0,
+      );
+      const recursive = (root.productCount ?? 0) + childrenTotal;
+      root.productCount = recursive;
+      root.isEmpty = recursive === 0;
+    }
+  }
+
   private async findExistingOrThrow(id: string): Promise<Category> {
     const category = await this.prisma.category.findFirst({
       where: { id, deletedAt: null },
@@ -462,9 +675,13 @@ export class CategoriesService {
     await this.redis.del(PUBLIC_CATEGORIES_CACHE_KEY);
   }
 
-  private toPublic(category: Category): PublicCategory {
+  private toPublic(
+    category: Category,
+    extra?: { productCount?: number; isEmpty?: boolean },
+  ): PublicCategory {
     return {
       id: category.id,
+      parentId: category.parentId,
       nameAr: category.nameAr,
       nameEn: category.nameEn,
       imageUrl: category.imagePath
@@ -472,6 +689,10 @@ export class CategoriesService {
         : null,
       sortOrder: category.sortOrder,
       isActive: category.isActive,
+      ...(extra?.productCount !== undefined
+        ? { productCount: extra.productCount }
+        : {}),
+      ...(extra?.isEmpty !== undefined ? { isEmpty: extra.isEmpty } : {}),
     };
   }
 
@@ -483,6 +704,13 @@ export class CategoriesService {
       inactiveProductCount: number;
       outOfStockProductCount: number;
     },
+    hierarchy?: {
+      parentNameAr: string | null;
+      parentNameEn: string | null;
+      childrenCount: number;
+      childrenProductCount: number;
+      totalProductCount: number;
+    },
   ) {
     return {
       ...this.toPublic(category),
@@ -492,6 +720,12 @@ export class CategoriesService {
       activeProductCount: counts?.activeProductCount ?? 0,
       inactiveProductCount: counts?.inactiveProductCount ?? 0,
       outOfStockProductCount: counts?.outOfStockProductCount ?? 0,
+      parentNameAr: hierarchy?.parentNameAr ?? null,
+      parentNameEn: hierarchy?.parentNameEn ?? null,
+      childrenCount: hierarchy?.childrenCount ?? 0,
+      childrenProductCount: hierarchy?.childrenProductCount ?? 0,
+      totalProductCount:
+        hierarchy?.totalProductCount ?? counts?.productCount ?? 0,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
     };

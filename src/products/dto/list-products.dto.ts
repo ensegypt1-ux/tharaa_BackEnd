@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
@@ -19,6 +19,19 @@ function toOptionalBoolean(value: unknown): boolean | undefined {
   return undefined;
 }
 
+/**
+ * Keep query-string booleans as strings first so enableImplicitConversion
+ * cannot turn "false" into true (Boolean("false") === true).
+ */
+function QueryTriStateBoolean(): PropertyDecorator {
+  return (target: object, propertyKey: string | symbol) => {
+    Type(() => String)(target, propertyKey);
+    Transform(({ value }) => toOptionalBoolean(value))(target, propertyKey);
+    IsOptional()(target, propertyKey);
+    IsBoolean()(target, propertyKey);
+  };
+}
+
 export class ListProductsDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Search nameAr / nameEn / SKU (ILIKE)' })
   @IsOptional()
@@ -30,40 +43,39 @@ export class ListProductsDto extends PaginationDto {
   @IsUUID()
   categoryId?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Include products from direct subcategories. ' +
+      'When omitted: parent categories automatically include descendants; ' +
+      'child/leaf categories stay direct-only. ' +
+      'When false: always direct products only. ' +
+      'When true: always include direct children.',
+  })
+  @QueryTriStateBoolean()
+  includeChildren?: boolean;
+
   @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => toOptionalBoolean(value))
-  @IsBoolean()
+  @QueryTriStateBoolean()
   isFeatured?: boolean;
 
   @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => toOptionalBoolean(value))
-  @IsBoolean()
+  @QueryTriStateBoolean()
   isBestSeller?: boolean;
 
   @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => toOptionalBoolean(value))
-  @IsBoolean()
+  @QueryTriStateBoolean()
   inStock?: boolean;
 
   @ApiPropertyOptional({ description: 'Admin filter: active products only' })
-  @IsOptional()
-  @Transform(({ value }) => toOptionalBoolean(value))
-  @IsBoolean()
+  @QueryTriStateBoolean()
   isActive?: boolean;
 
   @ApiPropertyOptional({ description: 'Admin filter: products with no images' })
-  @IsOptional()
-  @Transform(({ value }) => toOptionalBoolean(value))
-  @IsBoolean()
+  @QueryTriStateBoolean()
   missingImages?: boolean;
 
   @ApiPropertyOptional({ description: 'Admin filter: low stock products' })
-  @IsOptional()
-  @Transform(({ value }) => toOptionalBoolean(value))
-  @IsBoolean()
+  @QueryTriStateBoolean()
   lowStock?: boolean;
 
   @ApiPropertyOptional({

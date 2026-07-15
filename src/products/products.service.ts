@@ -451,12 +451,18 @@ export class ProductsService {
     const where: Prisma.ProductWhereInput = {
       deletedAt: null,
       ...(options.publicOnly ? { isActive: true } : {}),
-      ...(dto.categoryId ? { categoryId: dto.categoryId } : {}),
       ...(dto.isFeatured !== undefined ? { isFeatured: dto.isFeatured } : {}),
       ...(dto.isBestSeller !== undefined
         ? { isBestSeller: dto.isBestSeller }
         : {}),
     };
+
+    if (dto.categoryId) {
+      where.categoryId = await this.resolveCategoryIdFilter(
+        dto.categoryId,
+        dto.includeChildren,
+      );
+    }
 
     if (!options.publicOnly && dto.isActive !== undefined) {
       where.isActive = dto.isActive;
@@ -745,6 +751,69 @@ export class ProductsService {
       throw new NotFoundException('Variant not found');
     }
     return variant;
+  }
+
+  async bulkReassign(dto: {
+    productIds: string[];
+    categoryId: string;
+  }): Promise<{ updated: number; categoryId: string }> {
+    await this.assertCategoryExists(dto.categoryId);
+    const uniqueIds = [...new Set(dto.productIds)];
+    const result = await this.prisma.product.updateMany({
+      where: {
+        id: { in: uniqueIds },
+        deletedAt: null,
+      },
+      data: { categoryId: dto.categoryId },
+    });
+    return { updated: result.count, categoryId: dto.categoryId };
+  }
+
+  /**
+   * Resolve product categoryId filter.
+   *
+   * - includeChildren === false → direct category only
+   * - includeChildren === true → category + direct children
+   * - includeChildren omitted → parents (with children) expand to descendants;
+   *   leaf/child categories stay direct-only
+   *
+   * One extra query max (children of this id). No per-child queries.
+   */
+  private async resolveCategoryIdFilter(
+    categoryId: string,
+    includeChildren?: boolean | string | number,
+  ): Promise<string | { in: string[] }> {
+    const flag = this.normalizeOptionalBoolean(includeChildren);
+    if (flag === false) {
+      return categoryId;
+    }
+
+    const children = await this.prisma.category.findMany({
+      where: { parentId: categoryId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (flag === true || children.length > 0) {
+      return { in: [categoryId, ...children.map((c) => c.id)] };
+    }
+
+    return categoryId;
+  }
+
+  /** Handles query-string / implicit-conversion edge cases for booleans. */
+  private normalizeOptionalBoolean(
+    value: unknown,
+  ): boolean | undefined {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+    if (value === true || value === 1 || value === '1' || value === 'true') {
+      return true;
+    }
+    if (value === false || value === 0 || value === '0' || value === 'false') {
+      return false;
+    }
+    return undefined;
   }
 
   private async assertCategoryExists(categoryId: string) {

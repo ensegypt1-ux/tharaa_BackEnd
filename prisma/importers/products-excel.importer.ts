@@ -157,9 +157,9 @@ export async function importProductsFromExcel(
     skippedReasons: {},
   };
 
-  // Load existing non-deleted categories into a normalization map
+  // Load existing non-deleted top-level categories into a normalization map
   const existingCategories = await prisma.category.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, parentId: null },
     select: { id: true, nameAr: true },
   });
   const categoryByNorm = new Map<string, string>();
@@ -239,6 +239,7 @@ export async function importProductsFromExcel(
     if (!categoryId) {
       const created = await prisma.category.create({
         data: {
+          parentId: null,
           nameAr: categoryNorm,
           nameEn: categoryNorm,
           sortOrder: categoryByNorm.size + 1,
