@@ -18,6 +18,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ApiErrorDto } from '../common/swagger/api-error.dto';
 import { ApiSuccessDto } from '../common/swagger/api-success.dto';
 import { AddressesService } from './addresses.service';
+import { AddressResponseDto } from './dto/address-response.dto';
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
 
 @ApiTags('addresses')
@@ -32,7 +33,8 @@ export class AddressesController {
   @ApiResponse({
     status: 200,
     description: 'Addresses listed',
-    type: ApiSuccessDto,
+    type: AddressResponseDto,
+    isArray: true,
   })
   findAll(@CurrentUser() user: User) {
     return this.addressesService.findAll(user.id);
@@ -43,7 +45,7 @@ export class AddressesController {
   @ApiResponse({
     status: 200,
     description: 'Address retrieved',
-    type: ApiSuccessDto,
+    type: AddressResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
   findOne(@CurrentUser() user: User, @Param('id') id: string) {
@@ -55,7 +57,7 @@ export class AddressesController {
   @ApiResponse({
     status: 201,
     description: 'Address created',
-    type: ApiSuccessDto,
+    type: AddressResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   create(@CurrentUser() user: User, @Body() dto: CreateAddressDto) {
@@ -67,7 +69,7 @@ export class AddressesController {
   @ApiResponse({
     status: 200,
     description: 'Address updated',
-    type: ApiSuccessDto,
+    type: AddressResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
@@ -96,7 +98,7 @@ export class AddressesController {
   @ApiResponse({
     status: 200,
     description: 'Default address set',
-    type: ApiSuccessDto,
+    type: AddressResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
   setDefault(@CurrentUser() user: User, @Param('id') id: string) {

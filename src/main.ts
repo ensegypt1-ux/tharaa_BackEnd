@@ -100,6 +100,8 @@ async function bootstrap() {
     .addTag('addresses', 'Customer delivery addresses')
     .addTag('categories', 'Public catalog categories')
     .addTag('products', 'Public catalog products and reviews')
+    .addTag('search', 'Search suggestions, recent and popular searches')
+    .addTag('wishlist', 'Authenticated product wishlist / favorites')
     .addTag('cart', 'Authenticated shopping cart')
     .addTag('coupons', 'Coupon validation')
     .addTag('orders', 'Customer orders')

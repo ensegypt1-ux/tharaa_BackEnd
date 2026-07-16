@@ -26,6 +26,7 @@ import { ApiSuccessDto } from '../common/swagger/api-success.dto';
 import { STORAGE_SERVICE, StorageService } from '../uploads/storage.service';
 import { DeviceTokenDto, RemoveDeviceTokenDto } from './dto/device-token.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { PublicUserDto } from './dto/public-user.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
@@ -44,7 +45,7 @@ export class UsersController {
   @ApiResponse({
     status: 200,
     description: 'Profile retrieved',
-    type: ApiSuccessDto,
+    type: PublicUserDto,
   })
   getMe(@CurrentUser() user: User) {
     return this.usersService.getMe(user.id);
@@ -55,7 +56,7 @@ export class UsersController {
   @ApiResponse({
     status: 200,
     description: 'Profile updated',
-    type: ApiSuccessDto,
+    type: PublicUserDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   updateMe(@CurrentUser() user: User, @Body() dto: UpdateProfileDto) {
@@ -104,7 +105,7 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'Avatar uploaded',
-    type: ApiSuccessDto,
+    type: PublicUserDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   @UseInterceptors(FileInterceptor('file'))

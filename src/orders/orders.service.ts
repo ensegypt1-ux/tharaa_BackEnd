@@ -26,6 +26,7 @@ import {
 } from '../inventory/inventory.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { withOrderMapsUrl } from '../common/utils/maps-url.util';
 import { RedisService } from '../redis/redis.service';
 import {
   AdminListOrdersDto,
@@ -332,7 +333,7 @@ export class OrdersService {
       ),
     );
 
-    return order;
+    return withOrderMapsUrl(order);
   }
 
   async listMine(userId: string, query: ListOrdersDto) {
@@ -368,7 +369,7 @@ export class OrdersService {
     ]);
 
     return {
-      items,
+      items: items.map((order) => withOrderMapsUrl(order)),
       meta: {
         page,
         limit,
@@ -386,7 +387,7 @@ export class OrdersService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
-    return order;
+    return withOrderMapsUrl(order);
   }
 
   async cancelMine(userId: string, id: string, dto: CancelOrderDto) {
@@ -440,7 +441,7 @@ export class OrdersService {
       ),
     );
 
-    return updated;
+    return withOrderMapsUrl(updated);
   }
 
   async adminList(query: AdminListOrdersDto) {
@@ -495,7 +496,7 @@ export class OrdersService {
     ]);
 
     return {
-      items,
+      items: items.map((order) => withOrderMapsUrl(order)),
       meta: {
         page,
         limit,
@@ -555,7 +556,7 @@ export class OrdersService {
     );
 
     return {
-      ...order,
+      ...withOrderMapsUrl(order),
       notifications,
       allowedTransitions,
       printable: this.toPrintable(order),
@@ -742,7 +743,7 @@ export class OrdersService {
       ),
     );
 
-    return updated;
+    return withOrderMapsUrl(updated);
   }
 
   private async adminCancel(
@@ -824,7 +825,7 @@ export class OrdersService {
       ),
     );
 
-    return updated;
+    return withOrderMapsUrl(updated);
   }
 
   private async emitAdminOrderCreated(orderId: string) {

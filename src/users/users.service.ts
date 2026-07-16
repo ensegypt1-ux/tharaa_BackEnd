@@ -2,9 +2,11 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { AccountStatus, Locale, User, UserRole } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { STORAGE_SERVICE, StorageService } from '../uploads/storage.service';
 import { DeviceTokenDto } from './dto/device-token.dto';
@@ -19,14 +21,19 @@ export type PublicUser = {
   status: AccountStatus;
   locale: Locale;
   avatarUrl: string | null;
+  requiresPhoneCompletion: boolean;
+  profileComplete: boolean;
 };
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE)
     private readonly storage: StorageService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async getMe(userId: string): Promise<PublicUser> {
@@ -35,7 +42,8 @@ export class UsersService {
   }
 
   async updateMe(userId: string, dto: UpdateProfileDto): Promise<PublicUser> {
-    await this.findActiveUserOrThrow(userId);
+    const existing = await this.findActiveUserOrThrow(userId);
+    const hadPhone = Boolean(existing.phone?.trim());
 
     const email =
       dto.email !== undefined ? dto.email.trim().toLowerCase() : undefined;
@@ -70,6 +78,22 @@ export class UsersService {
         ...(dto.locale !== undefined ? { locale: dto.locale } : {}),
       },
     });
+
+    const hasPhone = Boolean(user.phone?.trim());
+    if (
+      user.role === UserRole.CUSTOMER &&
+      !hadPhone &&
+      hasPhone &&
+      phone !== undefined
+    ) {
+      void this.notifications
+        .notifyPhoneCompletionFinished(user.id)
+        .catch((err) =>
+          this.logger.warn(
+            `notifyPhoneCompletionFinished failed: ${(err as Error).message}`,
+          ),
+        );
+    }
 
     return this.toPublicUser(user);
   }
@@ -155,7 +179,22 @@ export class UsersService {
     return this.toPublicUser(updated);
   }
 
-  toPublicUser(user: User): PublicUser {
+  async toPublicUser(user: User): Promise<PublicUser> {
+    const requiresPhoneCompletion =
+      user.role === UserRole.CUSTOMER && !user.phone?.trim();
+
+    let profileComplete = false;
+    if (user.role === UserRole.CUSTOMER) {
+      const defaultAddressCount = await this.prisma.address.count({
+        where: { userId: user.id, deletedAt: null, isDefault: true },
+      });
+
+      profileComplete =
+        Boolean(user.fullName?.trim()) &&
+        Boolean(user.phone?.trim()) &&
+        defaultAddressCount > 0;
+    }
+
     return {
       id: user.id,
       email: user.email,
@@ -167,6 +206,8 @@ export class UsersService {
       avatarUrl: user.avatarPath
         ? this.storage.getPublicUrl(user.avatarPath)
         : null,
+      requiresPhoneCompletion,
+      profileComplete,
     };
   }
 

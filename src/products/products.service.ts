@@ -7,6 +7,8 @@ import {
 import {
   Category,
   Inventory,
+  OfferScope,
+  OrderStatus,
   Prisma,
   Product,
   ProductImage,
@@ -21,6 +23,7 @@ import { STORAGE_SERVICE, StorageService } from '../uploads/storage.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { ListProductsDto } from './dto/list-products.dto';
+import { ProductFeedQueryDto } from './dto/product-feed-query.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 
@@ -47,26 +50,186 @@ export class ProductsService {
     private readonly storage: StorageService,
   ) {}
 
-  async listPublic(dto: ListProductsDto) {
+  async listPublic(dto: ListProductsDto, userId?: string | null) {
     const where = await this.buildListWhere(dto, { publicOnly: true });
+    return this.paginatePublicProducts({
+      where,
+      page: dto.page ?? 1,
+      limit: dto.limit ?? 20,
+      userId,
+    });
+  }
+
+  async listFlashDeals(dto: ProductFeedQueryDto, userId?: string | null) {
+    const now = new Date();
+    const offers = await this.prisma.offer.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        startsAt: { lte: now },
+        endsAt: { gte: now },
+      },
+      include: { products: true },
+    });
+
+    const offerProductIds = new Set<string>();
+    const offerCategoryIds = new Set<string>();
+
+    for (const offer of offers) {
+      if (offer.scope === OfferScope.PRODUCT) {
+        for (const link of offer.products) {
+          offerProductIds.add(link.productId);
+        }
+      } else if (offer.scope === OfferScope.CATEGORY && offer.categoryId) {
+        offerCategoryIds.add(offer.categoryId);
+      }
+    }
+
+    const orConditions: Prisma.ProductWhereInput[] = [
+      { salePrice: { not: null } },
+    ];
+
+    if (offerProductIds.size > 0) {
+      orConditions.push({ id: { in: [...offerProductIds] } });
+    }
+
+    if (offerCategoryIds.size > 0) {
+      orConditions.push({
+        categoryId: { in: [...offerCategoryIds] },
+      });
+    }
+
+    let where: Prisma.ProductWhereInput = {
+      deletedAt: null,
+      isActive: true,
+      OR: orConditions,
+    };
+
+    where = await this.applyInStockFilter(where, dto.inStock);
+
+    return this.paginatePublicProducts({
+      where,
+      page: dto.page ?? 1,
+      limit: dto.limit ?? 20,
+      userId,
+    });
+  }
+
+  /**
+   * Recommended products (currently sourced from Product.isFeatured).
+   * Structured as a dedicated feed for future recommendation engines.
+   */
+  async listRecommended(dto: ProductFeedQueryDto, userId?: string | null) {
+    let where: Prisma.ProductWhereInput = {
+      deletedAt: null,
+      isActive: true,
+      isFeatured: true,
+    };
+
+    where = await this.applyInStockFilter(where, dto.inStock);
+
+    return this.paginatePublicProducts({
+      where,
+      page: dto.page ?? 1,
+      limit: dto.limit ?? 20,
+      userId,
+    });
+  }
+
+  async listSimilar(
+    productId: string,
+    dto: ProductFeedQueryDto,
+    userId?: string | null,
+  ) {
+    const source = await this.prisma.product.findFirst({
+      where: { id: productId, deletedAt: null, isActive: true },
+      select: { id: true, categoryId: true },
+    });
+
+    if (!source) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const categoryId = await this.resolveCategoryIdFilter(
+      source.categoryId,
+      dto.includeChildren,
+    );
+
+    let where: Prisma.ProductWhereInput = {
+      deletedAt: null,
+      isActive: true,
+      id: { not: productId },
+      categoryId,
+    };
+
+    where = await this.applyInStockFilter(where, dto.inStock);
+
+    return this.paginatePublicProducts({
+      where,
+      page: dto.page ?? 1,
+      limit: dto.limit ?? 20,
+      userId,
+    });
+  }
+
+  async listFrequentlyBoughtTogether(
+    productId: string,
+    dto: ProductFeedQueryDto,
+    userId?: string | null,
+  ) {
+    const source = await this.prisma.product.findFirst({
+      where: { id: productId, deletedAt: null, isActive: true },
+      select: { id: true },
+    });
+
+    if (!source) {
+      throw new NotFoundException('Product not found');
+    }
+
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const [total, products] = await this.prisma.$transaction([
-      this.prisma.product.count({ where }),
-      this.prisma.product.findMany({
-        where,
-        include: this.productInclude(),
-        orderBy: [{ createdAt: 'desc' }],
-        skip,
-        take: limit,
-      }),
-    ]);
+    const ranked = await this.prisma.$queryRaw<
+      { productId: string; pairCount: bigint }[]
+    >`
+      SELECT oi2."productId" AS "productId",
+             COUNT(DISTINCT oi2."orderId")::bigint AS "pairCount"
+      FROM "OrderItem" oi1
+      INNER JOIN "OrderItem" oi2
+        ON oi1."orderId" = oi2."orderId"
+        AND oi2."productId" <> ${productId}::uuid
+      INNER JOIN "Order" o ON o.id = oi1."orderId"
+      INNER JOIN "Product" p ON p.id = oi2."productId"
+      WHERE oi1."productId" = ${productId}::uuid
+        AND o.status = ${OrderStatus.COMPLETED}::"OrderStatus"
+        AND p."deletedAt" IS NULL
+        AND p."isActive" = true
+      GROUP BY oi2."productId"
+      ORDER BY "pairCount" DESC, oi2."productId" ASC
+    `;
 
-    const mapped = await this.mapProductsWithPricing(products);
+    if (!ranked.length) {
+      return this.emptyProductList(page, limit);
+    }
+
+    let orderedIds = ranked.map((row) => row.productId);
+
+    if (dto.inStock === true) {
+      const inStockIds = new Set(await this.findInStockProductIds(true));
+      orderedIds = orderedIds.filter((id) => inStockIds.has(id));
+    }
+
+    const total = orderedIds.length;
+    if (!total) {
+      return this.emptyProductList(page, limit);
+    }
+
+    const pageIds = orderedIds.slice(skip, skip + limit);
+    const data = await this.findPublicByIds(pageIds, userId);
+
     return {
-      data: mapped,
+      data,
       meta: {
         page,
         limit,
@@ -76,7 +239,7 @@ export class ProductsService {
     };
   }
 
-  async findPublicById(id: string) {
+  async findPublicById(id: string, userId?: string | null) {
     const product = await this.prisma.product.findFirst({
       where: { id, deletedAt: null, isActive: true },
       include: this.productInclude(),
@@ -84,8 +247,29 @@ export class ProductsService {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-    const [mapped] = await this.mapProductsWithPricing([product]);
+    const [mapped] = await this.mapProductsWithPricing([product], userId);
     return mapped;
+  }
+
+  /** Load active public products by ids (preserves caller order). */
+  async findPublicByIds(ids: string[], userId?: string | null) {
+    if (!ids.length) {
+      return [];
+    }
+    const unique = [...new Set(ids)];
+    const products = await this.prisma.product.findMany({
+      where: {
+        id: { in: unique },
+        deletedAt: null,
+        isActive: true,
+      },
+      include: this.productInclude(),
+    });
+    const mapped = await this.mapProductsWithPricing(products, userId);
+    const byId = new Map(mapped.map((p) => [p.id as string, p]));
+    return ids
+      .map((id) => byId.get(id))
+      .filter((p): p is (typeof mapped)[number] => Boolean(p));
   }
 
   async adminList(dto: ListProductsDto) {
@@ -500,6 +684,107 @@ export class ProductsService {
     return where;
   }
 
+  private async paginatePublicProducts(params: {
+    where: Prisma.ProductWhereInput;
+    page: number;
+    limit: number;
+    userId?: string | null;
+    orderBy?: Prisma.ProductOrderByWithRelationInput[];
+  }) {
+    const {
+      where,
+      page,
+      limit,
+      userId,
+      orderBy = [{ createdAt: 'desc' }],
+    } = params;
+    const skip = (page - 1) * limit;
+
+    const [total, products] = await this.prisma.$transaction([
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
+        where,
+        include: this.productInclude(),
+        orderBy,
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    const data = await this.mapProductsWithPricing(products, userId);
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 0,
+      },
+    };
+  }
+
+  private emptyProductList(page: number, limit: number) {
+    return {
+      data: [],
+      meta: {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      },
+    };
+  }
+
+  private async applyInStockFilter(
+    where: Prisma.ProductWhereInput,
+    inStock?: boolean,
+  ): Promise<Prisma.ProductWhereInput> {
+    if (inStock !== true) {
+      return where;
+    }
+
+    const stockIds = await this.findInStockProductIds(true);
+    const next = { ...where };
+
+    if (!stockIds.length) {
+      next.id = { in: ['__none__'] };
+      return next;
+    }
+
+    const existingId = next.id;
+    if (
+      existingId &&
+      typeof existingId === 'object' &&
+      'in' in existingId &&
+      Array.isArray(existingId.in)
+    ) {
+      const allowed = new Set(stockIds);
+      next.id = {
+        in: (existingId.in as string[]).filter((id) => allowed.has(id)),
+      };
+      if (!(next.id as { in: string[] }).in.length) {
+        next.id = { in: ['__none__'] };
+      }
+      return next;
+    }
+
+    if (
+      existingId &&
+      typeof existingId === 'object' &&
+      'not' in existingId
+    ) {
+      const stockSet = new Set(stockIds);
+      next.AND = [
+        ...(Array.isArray(next.AND) ? next.AND : next.AND ? [next.AND] : []),
+        { id: { in: stockIds } },
+      ];
+      return next;
+    }
+
+    next.id = { in: stockIds };
+    return next;
+  }
+
   private async findLowStockProductIds(): Promise<string[]> {
     const rows = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT p.id
@@ -577,7 +862,10 @@ export class ProductsService {
     };
   }
 
-  private async mapProductsWithPricing(products: ProductWithRelations[]) {
+  private async mapProductsWithPricing(
+    products: ProductWithRelations[],
+    userId?: string | null,
+  ) {
     if (products.length === 0) {
       return [];
     }
@@ -586,6 +874,13 @@ export class ProductsService {
       productIds: products.map((p) => p.id),
       categoryIds: products.map((p) => p.categoryId),
     });
+
+    const favoritedIds = userId
+      ? await this.loadFavoritedProductIds(
+          userId,
+          products.map((p) => p.id),
+        )
+      : null;
 
     return products.map((product) => {
       const basePrice = this.pricing.calculateUnitPrice({
@@ -652,6 +947,9 @@ export class ProductsService {
         ratingAverage: Number(product.ratingAverage),
         ratingCount: product.ratingCount,
         effectivePrice: basePrice,
+        ...(favoritedIds
+          ? { isFavorited: favoritedIds.has(product.id) }
+          : {}),
         category: product.category
           ? {
               id: product.category.id,
@@ -674,6 +972,23 @@ export class ProductsService {
         updatedAt: product.updatedAt,
       };
     });
+  }
+
+  private async loadFavoritedProductIds(
+    userId: string,
+    productIds: string[],
+  ): Promise<Set<string>> {
+    if (!productIds.length) {
+      return new Set();
+    }
+    const rows = await this.prisma.wishlistItem.findMany({
+      where: {
+        userId,
+        productId: { in: productIds },
+      },
+      select: { productId: true },
+    });
+    return new Set(rows.map((r) => r.productId));
   }
 
   private async mapVariant(

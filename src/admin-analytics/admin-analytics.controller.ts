@@ -11,6 +11,10 @@ import { ApiErrorDto } from '../common/swagger/api-error.dto';
 import { ApiSuccessDto } from '../common/swagger/api-success.dto';
 import { AdminAnalyticsService } from './admin-analytics.service';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
+import {
+  AdminSearchAnalyticsQueryDto,
+  AdminWishlistAnalyticsQueryDto,
+} from './dto/search-wishlist-analytics.dto';
 
 @ApiTags('admin-analytics')
 @ApiBearerAuth()
@@ -41,5 +45,32 @@ export class AdminAnalyticsController {
   })
   charts(@Query() dto: AnalyticsQueryDto) {
     return this.analyticsService.charts(dto);
+  }
+
+  @Get('search')
+  @ApiOperation({
+    summary:
+      'Search analytics (totals, recent terms, paginated popular terms; no user identities)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Search analytics',
+    type: ApiSuccessDto,
+  })
+  search(@Query() dto: AdminSearchAnalyticsQueryDto) {
+    return this.analyticsService.searchAnalytics(dto);
+  }
+
+  @Get('wishlist')
+  @ApiOperation({
+    summary: 'Wishlist analytics (totals and top wishlisted products)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Wishlist analytics',
+    type: ApiSuccessDto,
+  })
+  wishlist(@Query() dto: AdminWishlistAnalyticsQueryDto) {
+    return this.analyticsService.wishlistAnalytics(dto);
   }
 }

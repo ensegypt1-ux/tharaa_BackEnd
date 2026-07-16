@@ -11,6 +11,7 @@ import { AccountStatus, Locale, User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { createHash, randomBytes } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PublicUser, UsersService } from '../users/users.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -36,6 +37,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly usersService: UsersService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthTokensResponse> {
@@ -74,6 +76,14 @@ export class AuthService {
         locale: Locale.ar,
       },
     });
+
+    void this.notifications
+      .notifyCustomerAccountCreated(user.id)
+      .catch((err) =>
+        this.logger.warn(
+          `notifyCustomerAccountCreated failed: ${(err as Error).message}`,
+        ),
+      );
 
     return this.issueTokens(user);
   }
@@ -136,6 +146,8 @@ export class AuthService {
       },
     });
 
+    let isNewGoogleAccount = false;
+
     if (user) {
       if (user.status !== AccountStatus.ACTIVE) {
         throw new UnauthorizedException('Account is not active');
@@ -153,6 +165,7 @@ export class AuthService {
         },
       });
     } else {
+      isNewGoogleAccount = true;
       user = await this.prisma.user.create({
         data: {
           googleSub,
@@ -164,6 +177,16 @@ export class AuthService {
           emailVerifiedAt: emailVerified && email ? new Date() : null,
         },
       });
+    }
+
+    if (isNewGoogleAccount) {
+      void this.notifications
+        .notifyGoogleAccountCreated(user.id)
+        .catch((err) =>
+          this.logger.warn(
+            `notifyGoogleAccountCreated failed: ${(err as Error).message}`,
+          ),
+        );
     }
 
     return this.issueTokens(user);
@@ -353,7 +376,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       expiresIn: accessExpires,
-      user: this.usersService.toPublicUser(user),
+      user: await this.usersService.toPublicUser(user),
     };
   }
 

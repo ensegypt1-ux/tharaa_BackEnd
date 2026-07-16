@@ -24,6 +24,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { ApiErrorDto } from '../common/swagger/api-error.dto';
 import { ApiSuccessDto } from '../common/swagger/api-success.dto';
 import { AdminListOrdersDto, UpdateOrderStatusDto } from './dto/order.dto';
+import { OrderListResponseDto, OrderResponseDto } from './dto/order-response.dto';
 import { OrdersService } from './orders.service';
 
 @ApiTags('admin-orders')
@@ -44,7 +45,7 @@ export class AdminOrdersController {
   @ApiResponse({
     status: 200,
     description: 'Orders listed',
-    type: ApiSuccessDto,
+    type: OrderListResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   list(@Query() query: AdminListOrdersDto) {
@@ -71,7 +72,7 @@ export class AdminOrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order retrieved',
-    type: ApiSuccessDto,
+    type: OrderResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
   getOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -83,7 +84,7 @@ export class AdminOrdersController {
   @ApiResponse({
     status: 200,
     description: 'Status updated',
-    type: ApiSuccessDto,
+    type: OrderResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })

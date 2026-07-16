@@ -63,6 +63,8 @@ export class AddressesService {
           floor: dto.floor?.trim(),
           apartment: dto.apartment?.trim(),
           directions: dto.directions?.trim(),
+          formattedAddress: dto.formattedAddress?.trim(),
+          googlePlaceId: dto.googlePlaceId?.trim(),
           latitude: dto.latitude,
           longitude: dto.longitude,
           isDefault: makeDefault,
@@ -111,6 +113,12 @@ export class AddressesService {
           : {}),
         ...(dto.directions !== undefined
           ? { directions: dto.directions?.trim() ?? null }
+          : {}),
+        ...(dto.formattedAddress !== undefined
+          ? { formattedAddress: dto.formattedAddress?.trim() ?? null }
+          : {}),
+        ...(dto.googlePlaceId !== undefined
+          ? { googlePlaceId: dto.googlePlaceId?.trim() ?? null }
           : {}),
         ...(dto.latitude !== undefined ? { latitude: dto.latitude } : {}),
         ...(dto.longitude !== undefined ? { longitude: dto.longitude } : {}),

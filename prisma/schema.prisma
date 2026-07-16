@@ -207,6 +207,8 @@ model User {
   couponUsages        CouponUsage[]
   inventoryMoves      InventoryMovement[]  @relation("InventoryMovedBy")
   statusChanges       OrderStatusHistory[] @relation("StatusChangedBy")
+  searchHistory       UserSearchHistory[]
+  wishlistItems       WishlistItem[]
 
   @@index([role])
   @@index([status])
@@ -241,10 +243,12 @@ model Address {
   building      String?
   floor         String?
   apartment     String?
-  directions    String?
-  latitude      Decimal?  @db.Decimal(10, 7)
-  longitude     Decimal?  @db.Decimal(10, 7)
-  isDefault     Boolean   @default(false)
+  directions        String?
+  formattedAddress  String?
+  googlePlaceId     String?
+  latitude          Decimal?  @db.Decimal(10, 7)
+  longitude         Decimal?  @db.Decimal(10, 7)
+  isDefault         Boolean   @default(false)
   deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -304,13 +308,55 @@ model Product {
   inventory  Inventory?
   cartItems  CartItem[]
   orderItems OrderItem[]
-  reviews    ProductReview[]
-  offerLinks OfferProduct[]
+  reviews       ProductReview[]
+  offerLinks    OfferProduct[]
+  wishlistItems WishlistItem[]
 
   @@index([categoryId, isActive])
   @@index([isFeatured])
   @@index([isBestSeller])
   @@index([adminImageReviewedAt])
+}
+
+model UserSearchHistory {
+  id         String   @id @default(uuid())
+  userId     String
+  term       String
+  termKey    String
+  searchedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, termKey])
+  @@index([userId, searchedAt])
+}
+
+model PopularSearch {
+  id             String   @id @default(uuid())
+  term           String
+  termKey        String   @unique
+  count          Int      @default(0)
+  lastSearchedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([count, lastSearchedAt])
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+  @@index([productId])
 }
 
 model ProductImage {

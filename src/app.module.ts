@@ -30,8 +30,10 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { RedisModule } from './redis/redis.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { SearchModule } from './search/search.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -71,6 +73,8 @@ import { UsersModule } from './users/users.module';
     NotificationsModule,
     OrdersModule,
     ReviewsModule,
+    SearchModule,
+    WishlistModule,
     AdminAnalyticsModule,
     AdminCustomersModule,
     AdminSettingsModule,

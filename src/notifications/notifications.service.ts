@@ -101,6 +101,42 @@ export class NotificationsService implements OnModuleInit {
     return notification;
   }
 
+  async notifyGoogleAccountCreated(userId: string): Promise<void> {
+    await this.createAndSend({
+      userId,
+      type: NotificationType.SYSTEM,
+      titleAr: 'مرحباً بك في ثراء',
+      titleEn: 'Welcome to Tharaa',
+      bodyAr: 'تم إنشاء حسابك باستخدام Google بنجاح',
+      bodyEn: 'Your account was created with Google successfully',
+      data: { event: 'google_account_created' },
+    });
+  }
+
+  async notifyCustomerAccountCreated(userId: string): Promise<void> {
+    await this.createAndSend({
+      userId,
+      type: NotificationType.SYSTEM,
+      titleAr: 'مرحباً بك في ثراء',
+      titleEn: 'Welcome to Tharaa',
+      bodyAr: 'تم إنشاء حسابك بنجاح',
+      bodyEn: 'Your customer account was created successfully',
+      data: { event: 'customer_account_created' },
+    });
+  }
+
+  async notifyPhoneCompletionFinished(userId: string): Promise<void> {
+    await this.createAndSend({
+      userId,
+      type: NotificationType.SYSTEM,
+      titleAr: 'اكتمل رقم الهاتف',
+      titleEn: 'Phone number saved',
+      bodyAr: 'تم حفظ رقم هاتفك بنجاح',
+      bodyEn: 'Your phone number has been saved successfully',
+      data: { event: 'phone_completion_finished' },
+    });
+  }
+
   async notifyOrderStatus(
     userId: string,
     payload: OrderStatusNotifyPayload,

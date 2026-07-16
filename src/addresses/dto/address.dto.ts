@@ -63,6 +63,20 @@ export class CreateAddressDto {
   @IsString()
   directions?: string;
 
+  @ApiPropertyOptional({
+    description: 'Google Places formatted address from the map picker',
+  })
+  @IsOptional()
+  @IsString()
+  formattedAddress?: string;
+
+  @ApiPropertyOptional({
+    description: 'Google Place ID from the map picker',
+  })
+  @IsOptional()
+  @IsString()
+  googlePlaceId?: string;
+
   @ApiPropertyOptional({ example: 28.4391 })
   @IsOptional()
   @Type(() => Number)
@@ -139,6 +153,20 @@ export class UpdateAddressDto {
   @IsOptional()
   @IsString()
   directions?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Google Places formatted address from the map picker',
+  })
+  @IsOptional()
+  @IsString()
+  formattedAddress?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Google Place ID from the map picker',
+  })
+  @IsOptional()
+  @IsString()
+  googlePlaceId?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()

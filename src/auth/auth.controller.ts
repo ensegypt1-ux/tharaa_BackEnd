@@ -13,6 +13,7 @@ import { Public } from '../common/decorators/public.decorator';
 import { ApiErrorDto } from '../common/swagger/api-error.dto';
 import { ApiSuccessDto } from '../common/swagger/api-success.dto';
 import { AuthService } from './auth.service';
+import { AuthTokensResponseDto } from './dto/auth-tokens-response.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
 import { LoginDto } from './dto/login.dto';
@@ -31,7 +32,7 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register a new customer account' })
-  @ApiResponse({ status: 201, description: 'Registered', type: ApiSuccessDto })
+  @ApiResponse({ status: 201, description: 'Registered', type: AuthTokensResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -40,7 +41,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @ApiOperation({ summary: 'Login with email or phone' })
-  @ApiResponse({ status: 200, description: 'Logged in', type: ApiSuccessDto })
+  @ApiResponse({ status: 200, description: 'Logged in', type: AuthTokensResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
   async login(@Req() req: Request, @Body() dto: LoginDto) {
@@ -67,7 +68,7 @@ export class AuthController {
   @Public()
   @Post('google')
   @ApiOperation({ summary: 'Sign in with Google ID token' })
-  @ApiResponse({ status: 200, description: 'Signed in', type: ApiSuccessDto })
+  @ApiResponse({ status: 200, description: 'Signed in', type: AuthTokensResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
   google(@Body() dto: GoogleAuthDto) {
@@ -80,7 +81,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Tokens rotated',
-    type: ApiSuccessDto,
+    type: AuthTokensResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })

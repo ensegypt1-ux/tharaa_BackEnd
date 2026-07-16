@@ -18,6 +18,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ApiErrorDto } from '../common/swagger/api-error.dto';
 import { ApiSuccessDto } from '../common/swagger/api-success.dto';
 import { CancelOrderDto, ListOrdersDto, PlaceOrderDto } from './dto/order.dto';
+import { OrderListResponseDto, OrderResponseDto } from './dto/order-response.dto';
 import { OrdersService } from './orders.service';
 
 @ApiTags('orders')
@@ -32,7 +33,7 @@ export class OrdersController {
   @ApiResponse({
     status: 201,
     description: 'Order placed',
-    type: ApiSuccessDto,
+    type: OrderResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   place(@CurrentUser() user: User, @Body() dto: PlaceOrderDto) {
@@ -44,7 +45,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Orders listed',
-    type: ApiSuccessDto,
+    type: OrderListResponseDto,
   })
   list(@CurrentUser() user: User, @Query() query: ListOrdersDto) {
     return this.ordersService.listMine(user.id, query);
@@ -55,7 +56,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order retrieved',
-    type: ApiSuccessDto,
+    type: OrderResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })
   getOne(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
@@ -67,7 +68,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order cancelled',
-    type: ApiSuccessDto,
+    type: OrderResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request', type: ApiErrorDto })
   @ApiResponse({ status: 404, description: 'Not Found', type: ApiErrorDto })

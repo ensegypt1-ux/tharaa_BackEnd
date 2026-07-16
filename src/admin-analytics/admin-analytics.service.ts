@@ -1,13 +1,22 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { OrderStatus, Prisma, ReviewStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { STORAGE_SERVICE, StorageService } from '../uploads/storage.service';
 import { AnalyticsQueryDto } from './dto/analytics-query.dto';
+import {
+  AdminSearchAnalyticsQueryDto,
+  AdminWishlistAnalyticsQueryDto,
+} from './dto/search-wishlist-analytics.dto';
 
 type DateRange = { from: Date; to: Date };
 
 @Injectable()
 export class AdminAnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(STORAGE_SERVICE)
+    private readonly storage: StorageService,
+  ) {}
 
   async overview(dto: AnalyticsQueryDto) {
     const range = this.resolveRange(dto);
@@ -220,6 +229,192 @@ export class AdminAnalyticsService {
         ordersInRange === 0
           ? 0
           : Math.round((cancelledInRange / ordersInRange) * 10000) / 100,
+    };
+  }
+
+  async searchAnalytics(dto: AdminSearchAnalyticsQueryDto) {
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const sortBy = dto.sortBy ?? 'count';
+    const sortDir = dto.sortDir ?? 'desc';
+    const recentLimit = dto.recentLimit ?? 10;
+    const q = dto.q?.trim();
+
+    const termFilter: Prisma.PopularSearchWhereInput = q
+      ? {
+          OR: [
+            { term: { contains: q, mode: 'insensitive' } },
+            {
+              termKey: {
+                contains: q.toLocaleLowerCase('ar'),
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {};
+
+    const [sumAgg, uniqueTerms, popularTotal, popularItems, recentItems] =
+      await Promise.all([
+        this.prisma.popularSearch.aggregate({
+          _sum: { count: true },
+        }),
+        this.prisma.popularSearch.count(),
+        this.prisma.popularSearch.count({ where: termFilter }),
+        this.prisma.popularSearch.findMany({
+          where: termFilter,
+          orderBy:
+            sortBy === 'lastSearchedAt'
+              ? [{ lastSearchedAt: sortDir }, { count: 'desc' }]
+              : [{ count: sortDir }, { lastSearchedAt: 'desc' }],
+          skip,
+          take: limit,
+          select: {
+            term: true,
+            count: true,
+            lastSearchedAt: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.popularSearch.findMany({
+          orderBy: [{ lastSearchedAt: 'desc' }, { count: 'desc' }],
+          take: recentLimit,
+          select: {
+            term: true,
+            count: true,
+            lastSearchedAt: true,
+          },
+        }),
+      ]);
+
+    return {
+      totals: {
+        totalSearches: sumAgg._sum.count ?? 0,
+        uniqueTerms,
+      },
+      recentSearches: recentItems.map((r) => ({
+        term: r.term,
+        count: r.count,
+        lastSearchedAt: r.lastSearchedAt,
+      })),
+      popularSearches: {
+        data: popularItems.map((r) => ({
+          term: r.term,
+          count: r.count,
+          lastSearchedAt: r.lastSearchedAt,
+          createdAt: r.createdAt,
+        })),
+        meta: {
+          page,
+          limit,
+          total: popularTotal,
+          totalPages: Math.ceil(popularTotal / limit) || 0,
+        },
+      },
+    };
+  }
+
+  async wishlistAnalytics(dto: AdminWishlistAnalyticsQueryDto) {
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const sortDir = dto.sortDir ?? 'desc';
+    const q = dto.q?.trim();
+
+    const [totalWishlistItems, usersWithWishlistGroups, grouped] =
+      await Promise.all([
+        this.prisma.wishlistItem.count(),
+        this.prisma.wishlistItem.groupBy({
+          by: ['userId'],
+          _count: { _all: true },
+        }),
+        this.prisma.wishlistItem.groupBy({
+          by: ['productId'],
+          _count: { _all: true },
+          orderBy: {
+            _count: { productId: sortDir },
+          },
+        }),
+      ]);
+
+    const productIds = grouped.map((g) => g.productId);
+    const products = productIds.length
+      ? await this.prisma.product.findMany({
+          where: {
+            id: { in: productIds },
+            ...(q
+              ? {
+                  OR: [
+                    { nameAr: { contains: q, mode: 'insensitive' } },
+                    { nameEn: { contains: q, mode: 'insensitive' } },
+                  ],
+                }
+              : {}),
+          },
+          select: {
+            id: true,
+            nameAr: true,
+            nameEn: true,
+            isActive: true,
+            deletedAt: true,
+            images: {
+              where: { deletedAt: null },
+              orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
+              take: 1,
+              select: { path: true },
+            },
+          },
+        })
+      : [];
+
+    const productById = new Map(products.map((p) => [p.id, p]));
+    const countByProduct = new Map(
+      grouped.map((g) => [g.productId, g._count._all]),
+    );
+
+    let rows = productIds
+      .map((productId) => {
+        const product = productById.get(productId);
+        if (!product) {
+          return null;
+        }
+        return {
+          productId: product.id,
+          nameAr: product.nameAr,
+          nameEn: product.nameEn,
+          isActive: product.isActive && product.deletedAt == null,
+          imageUrl: product.images[0]
+            ? this.storage.getPublicUrl(product.images[0].path)
+            : null,
+          wishlistCount: countByProduct.get(productId) ?? 0,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+
+    rows = rows.sort((a, b) =>
+      sortDir === 'asc'
+        ? a.wishlistCount - b.wishlistCount
+        : b.wishlistCount - a.wishlistCount,
+    );
+
+    const total = rows.length;
+    const data = rows.slice(skip, skip + limit);
+
+    return {
+      totals: {
+        totalWishlistItems,
+        usersWithWishlist: usersWithWishlistGroups.length,
+      },
+      topWishlistedProducts: {
+        data,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit) || 0,
+        },
+      },
     };
   }
 
