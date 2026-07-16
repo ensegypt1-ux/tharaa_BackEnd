@@ -318,12 +318,21 @@ export class NotificationsService {
       const locale = device.locale ?? 'ar';
       const title = locale === 'en' ? payload.titleEn : payload.titleAr;
       const body = locale === 'en' ? payload.bodyEn : payload.bodyAr;
+      const channelId = this.androidChannelIdForType(payload.data['type']);
 
       try {
         await this.messaging.send({
           token: device.token,
           notification: { title, body },
           data: payload.data,
+          android: {
+            priority: 'high',
+            notification: {
+              channelId,
+              defaultSound: true,
+              defaultVibrateTimings: true,
+            },
+          },
         });
       } catch (err) {
         const code =
@@ -350,6 +359,13 @@ export class NotificationsService {
         data: { deletedAt: new Date() },
       });
     }
+  }
+
+  /** Android FCM channel IDs — must match the Flutter customer app. */
+  private androidChannelIdForType(type: string | undefined): string {
+    return type === NotificationType.ORDER_STATUS
+      ? 'tharaa_orders'
+      : 'tharaa_general';
   }
 
   private orderStatusCopy(status: OrderStatus): {
