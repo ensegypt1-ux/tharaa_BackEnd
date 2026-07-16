@@ -1,3 +1,5 @@
+import { normalizeFcmPrivateKey } from '../firebase/firebase-admin.config';
+
 export default () => ({
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),
@@ -30,7 +32,7 @@ export default () => ({
   fcm: {
     projectId: process.env.FCM_PROJECT_ID || '',
     clientEmail: process.env.FCM_CLIENT_EMAIL || '',
-    privateKey: (process.env.FCM_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    privateKey: normalizeFcmPrivateKey(process.env.FCM_PRIVATE_KEY || ''),
   },
   corsOrigins: [
     ...(process.env.CORS_ORIGINS || 'http://localhost:3000')

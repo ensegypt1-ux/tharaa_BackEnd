@@ -136,6 +136,8 @@ export class OrdersService {
         floor: address.floor,
         apartment: address.apartment,
         directions: address.directions,
+        formattedAddress: address.formattedAddress,
+        googlePlaceId: address.googlePlaceId,
         latitude: address.latitude != null ? Number(address.latitude) : null,
         longitude: address.longitude != null ? Number(address.longitude) : null,
       };

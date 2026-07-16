@@ -19,6 +19,7 @@ import configuration from './config/configuration';
 import { envValidationSchema } from './config/env.validation';
 import { CouponsModule } from './coupons/coupons.module';
 import { DeliveryModule } from './delivery/delivery.module';
+import { FirebaseAdminModule } from './firebase/firebase-admin.module';
 import { HealthModule } from './health/health.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -53,6 +54,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     }),
     PrismaModule,
     RedisModule,
+    FirebaseAdminModule,
     UploadsModule,
     AdminAuditModule,
     AdminRealtimeModule,

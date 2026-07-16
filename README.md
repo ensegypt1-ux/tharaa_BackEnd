@@ -38,7 +38,7 @@ Copy [`.env.example`](.env.example) to `.env`. All runtime configuration is load
 | `POSTGRES_PASSWORD` | Yes for `docker compose` | Postgres password used by Compose |
 | `SEED_ADMIN_*` | Yes for seed | Admin seed identity + password |
 | `CORS_ORIGINS` / `ADMIN_DASHBOARD_ORIGINS` | Recommended | Comma-separated browser origins |
-| `GOOGLE_CLIENT_IDS` | Optional | Google Sign-In audiences |
+| `GOOGLE_CLIENT_IDS` | Optional | Comma-separated OAuth client IDs for Google ID token audience (include Web client ID). See [`../docs/GOOGLE_SIGN_IN_PRODUCTION.md`](../docs/GOOGLE_SIGN_IN_PRODUCTION.md) |
 | `FCM_*` | Optional | Firebase Cloud Messaging |
 | `PEXELS_API_KEY` | Optional | Admin product image search (server-only) |
 | `E2E_EMPLOYEE_PASSWORD` | E2E only | Staff password for e2e fixture |

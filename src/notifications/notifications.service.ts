@@ -1,9 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import { NotificationType, OrderStatus, Prisma } from '@prisma/client';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getMessaging, Messaging } from 'firebase-admin/messaging';
+import { Messaging } from 'firebase-admin/messaging';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { FirebaseAdminService } from '../firebase/firebase-admin.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   BroadcastNotificationDto,
@@ -21,46 +20,20 @@ export type CreateNotificationInput = {
 };
 
 @Injectable()
-export class NotificationsService implements OnModuleInit {
+export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  private messaging: Messaging | null = null;
-  private fcmEnabled = false;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
+    private readonly firebaseAdmin: FirebaseAdminService,
   ) {}
 
-  onModuleInit() {
-    const projectId = this.config.get<string>('fcm.projectId') || '';
-    const clientEmail = this.config.get<string>('fcm.clientEmail') || '';
-    const privateKey = this.config.get<string>('fcm.privateKey') || '';
+  private get messaging(): Messaging | null {
+    return this.firebaseAdmin.getMessaging();
+  }
 
-    if (!projectId || !clientEmail || !privateKey) {
-      this.logger.warn(
-        'FCM credentials incomplete — push notifications will be skipped',
-      );
-      return;
-    }
-
-    try {
-      if (!getApps().length) {
-        initializeApp({
-          credential: cert({
-            projectId,
-            clientEmail,
-            privateKey,
-          }),
-        });
-      }
-      this.messaging = getMessaging();
-      this.fcmEnabled = true;
-      this.logger.log('Firebase Admin initialized for FCM');
-    } catch (err) {
-      this.logger.error('Failed to initialize Firebase Admin', err as Error);
-      this.messaging = null;
-      this.fcmEnabled = false;
-    }
+  private get fcmEnabled(): boolean {
+    return this.firebaseAdmin.isConfigured();
   }
 
   async createAndSend(input: CreateNotificationInput) {
@@ -324,8 +297,7 @@ export class NotificationsService implements OnModuleInit {
       data: Record<string, string>;
     },
   ) {
-    const projectId = this.config.get<string>('fcm.projectId') || '';
-    if (!projectId || !this.fcmEnabled || !this.messaging) {
+    if (!this.fcmEnabled || !this.messaging) {
       this.logger.log(
         `FCM skip (not configured) for user ${userId}: ${payload.titleEn}`,
       );
